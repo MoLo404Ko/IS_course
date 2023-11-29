@@ -6,9 +6,9 @@ import java.sql.SQLException;
 
 public class DataBaseHandler {
     private final static String host = "sql12.freesqldatabase.com:3306";
-    private final static String db = "sql12663365";
-    private final static String user = "sql12663365";
-    private final static String password = "rGhvb6ITkK";
+    private final static String db = "sql12665428";
+    private final static String user = "sql12665428";
+    private final static String password = "IFpknCkS2b";
     private static DataBaseHandler dataBaseHandler = new DataBaseHandler();
 
     public Connection connect(Connection conn) throws ClassNotFoundException, SQLException {

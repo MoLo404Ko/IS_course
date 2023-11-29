@@ -15,6 +15,10 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.math.BigInteger;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,7 +26,13 @@ import java.sql.Statement;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+
+import app.course.HashPassword;
+import app.course.Queries;
 import app.course.R;
+import app.course.User;
 
 public class Registration extends AppCompatActivity {
     private ImageButton back_btn;
@@ -121,11 +131,15 @@ public class Registration extends AppCompatActivity {
                                     new Thread(() -> {
                                         try {
                                             if (!isExist) {
+                                                HashPassword hp = new HashPassword(password_field.getText().toString());
+                                                String password = hp.getHash();
+
                                                 statement.executeUpdate(Queries.newUser(login_field.getText().toString(),
-                                                        password_field.getText().toString(), name_field.getText().toString()));
+                                                        password, name_field.getText().toString()));
                                                 finish();
                                             }
-                                        } catch (SQLException e) {
+                                        } catch (SQLException | NoSuchAlgorithmException
+                                                 | InvalidKeySpecException e) {
                                             throw new RuntimeException(e);
                                         }
                                     }).start();
@@ -159,14 +173,8 @@ public class Registration extends AppCompatActivity {
                 conn = dataBaseHandler.connect(conn);
                 statement = conn.createStatement();
             }
-            catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
-            catch (SQLException e) {
-                throw new RuntimeException(e);
-                /*
-                alert
-                 */
+            catch (ClassNotFoundException | SQLException e) {
+                e.getMessage();
             }
         }).start();
 
@@ -230,6 +238,13 @@ public class Registration extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        try {
+            if (conn != null) dataBaseHandler.closeConnect(conn);
+            if (statement != null) statement.close();
+            if (rs != null) rs.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 
