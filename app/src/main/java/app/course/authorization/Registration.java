@@ -237,14 +237,15 @@ public class Registration extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         try {
             if (conn != null) dataBaseHandler.closeConnect(conn);
             if (statement != null) statement.close();
             if (rs != null) rs.close();
-        } catch (SQLException e) {
+        }
+        catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        super.onDestroy();
     }
 }
 

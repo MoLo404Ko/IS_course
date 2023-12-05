@@ -5,9 +5,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DataBaseHandler {
-    private final static String host = "sql12.freesqldatabase.com:3306";
-    private final static String db = "sql12665428";
-    private final static String user = "sql12665428";
+    private final static String host = "djudoklw.beget.tech:3306";
+    private final static String db = "djudoklw_course";
+    private final static String user = "djudoklw_course";
     private final static String password = "IFpknCkS2b";
     private static DataBaseHandler dataBaseHandler = new DataBaseHandler();
 

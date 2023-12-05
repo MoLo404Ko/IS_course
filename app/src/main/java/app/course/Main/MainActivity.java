@@ -1,9 +1,20 @@
 package app.course.Main;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentTransaction;
+
+import android.app.DatePickerDialog;
+import android.app.Dialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
+import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.DatePicker;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -14,7 +25,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import app.course.Queries;
 import app.course.R;
@@ -27,8 +42,13 @@ import app.course.menu_fragments.SettingsFragment;
 
 
 public class MainActivity extends AppCompatActivity {
-    private BottomNavigationView bottomNavigationView;
+    private FragmentTransaction fragmentTransaction = null;
+    private Button datePicker;
+    private Spinner dropDown;
+    private Calendar calendar;
 
+    private BottomNavigationView bottomNavigationView;
+    private ExecutorService executorService = null;
 
     private User user = User.getUser();
     private DataBaseHandler db = DataBaseHandler.getDataBaseHadler();
@@ -68,55 +88,90 @@ public class MainActivity extends AppCompatActivity {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
+        datePicker.setOnClickListener(view -> {
+            Dialog dialog = new Dialog(MainActivity.this);
+            dialog.setContentView(R.layout.custom_dialog_date);
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+            RelativeLayout all_time, one_day, week, month, range, year;
+
+            one_day = (RelativeLayout)dialog.findViewById(R.id.all_time_btn);
+
+            one_day.setOnClickListener(dialog_view -> {
+                DatePickerDialog datePickerDialog = new DatePickerDialog(MainActivity.this);
+                datePickerDialog.setOnDateSetListener(new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker dateP, int i, int i1, int i2) {
+                        datePicker.setText(String.valueOf(i) + "." + String.valueOf(i1) + "." + String.valueOf(i2));
+
+                        executorService.execute(() -> {
+
+                        });
+
+                    }
+                });
+
+                datePickerDialog.show();
+            });
+
+
+            dialog.show();
+        });
     }
 
     public void init() throws SQLException {
+        calendar = Calendar.getInstance();
+        datePicker = findViewById(R.id.date_picker);
+
         bottomNavigationView = findViewById(R.id.bottomNav);
         bottomNavigationView.setOnItemSelectedListener(listener_nav);
 
+        executorService = Executors.newSingleThreadExecutor();
+
         setDropDown();
+
+        FragmentGeneral fragmentGeneral = new FragmentGeneral();
+        fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        fragmentTransaction.replace(R.id.main_fragment, fragmentGeneral);
+        fragmentTransaction.commit();
+
+
     }
 
     private void setDropDown() throws SQLException {
-        Spinner dropDown = findViewById(R.id.amounts_drop_down);
+        dropDown = findViewById(R.id.amounts_drop_down);
         List<String> items = new ArrayList<>();
         Handler handler = new Handler();
 
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    conn = db.connect(conn);
-                    st = conn.createStatement();
-                }
-                catch (SQLException | ClassNotFoundException e) {
-                    e.getMessage();
-                }
-            }
-        }, 1500);
-
-        new Thread(() -> {
+        executorService.execute(() -> {
             try {
+                conn = db.connect(conn);
+                st = conn.createStatement();
+
                 rs = st.executeQuery(Queries.getAmounts(user));
 
-                if (rs.next()) {
-                    while (rs.next()) items.add(rs.getString(1));
+                while (rs.next()) {
+                    items.add(rs.getString(1));
                 }
-                else {
-                    st.executeUpdate(Queries.setDefaultAmounts(user));
-                    items.add("Основной счет");
-                }
-
-
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
             }
+            catch (SQLException | ClassNotFoundException e) {
+                e.getMessage();
+            }
+
+            handler.post(() -> {
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                        android.R.layout.simple_list_item_1, items);
+
+                adapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item);
+                dropDown.setAdapter(adapter);
+            });
         });
+    }
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, items);
+    private void setDatePicker() {
+        datePicker.setOnClickListener(view -> {
 
-        adapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item);
-        dropDown.setAdapter(adapter);
+        });
     }
 }

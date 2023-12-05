@@ -111,10 +111,11 @@
         />
 
     <TextView
+        android:id="@+id/btn_without_login"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="15dp"
-        android:text="@string/entry_as_guest"
+        android:text="@string/entry_without_auth"
         android:textColor="@color/white"
         android:clickable="true"
 

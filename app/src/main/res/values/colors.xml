@@ -11,4 +11,13 @@
     <color name="blue_general">#2442D9</color>
     <color name="error_red">#F91221</color>
     <color name="correct_green">#52BA0D</color>
+    
+    <color name="date_627CFF">#627CFF</color>
+    <color name="date_899DFF">#899DFF</color>
+    <color name="date_8E9DE7">#8E9DE7</color>
+    <color name="date_AAB5ED">#AAB5ED</color>
+
+    <color name="green_bg">#0F992D</color>
+    <color name="red_bg">#BC1A37</color>
+    <color name="sea_bg">#00A4AE</color>
 </resources>

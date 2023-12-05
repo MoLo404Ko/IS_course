@@ -6,7 +6,6 @@
             <solid android:color="@color/white"/>
             <size android:width="320dp"
                 android:height="125dp"/>
-
         </shape>
     </item>
 </layer-list>

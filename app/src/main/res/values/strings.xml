@@ -6,7 +6,7 @@
     <string name="cb_remember">Запомнить</string>
     <string name="forgot_password">Забыли пароль?</string>
     <string name="btn_entry">Войти</string>
-    <string name="entry_as_guest">Войти как гость</string>
+    <string name="entry_without_auth">Войти без авторизации</string>
     <string name="not_account">Нет аккаунта?</string>
     <string name="create_account"><u>Создать аккаунт</u></string>
 
@@ -29,5 +29,23 @@
     <string name="category_menu">Категории</string>
     <string name="amounts_menu">Счета</string>
     <string name="settings_menu">Настройки</string>
+
+    <string name="choose_date">Выберите дату</string>
+    <string name="range_date">Период</string>
+    <string name="day_date">День</string>
+    <string name="week_date">Неделя</string>
+    <string name="month_date">Месяц</string>
+    <string name="year_date">Год</string>
+    <string name="all_time_date">Все время</string>
+
+    <string name="incomes">Доходы</string>
+    <string name="expenses">Расходы</string>
+    <string name="default_sum">0$</string>
+    <string name="salary_cat">Зарплата</string>
+    <string name="present_cat">Подарки</string>
+    <string name="invest_cat">Инвестиции</string>
+
+    <string name="must_exp">Обязательные</string>
+    <string name="no_must_exp">Необязательные</string>
 
 </resources>

@@ -2,6 +2,7 @@ package app.course.authorization;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -36,7 +37,7 @@ import app.course.income.Income_activity;
 public class Authorization extends AppCompatActivity {
 
     private EditText login_field, password_field;
-    private TextView forgot_password_tv, reg_btn_tv;
+    private TextView forgot_password_tv, reg_btn_tv,  btn_without_login_tv;
     private Button btn_entry;
 
     private ExecutorService executorService = null;
@@ -103,6 +104,13 @@ public class Authorization extends AppCompatActivity {
 
                                                 rs = st.executeQuery(Queries.getIdUser(login_field.getText().toString()));
                                                 while (rs.next()) user.setID_user(rs.getInt(1));
+
+                                                rs = st.executeQuery(Queries.getAmounts(user));
+
+                                                if (!rs.next()) {
+                                                    Log.d("MyLog", "entry");
+                                                    st.executeUpdate(Queries.setDefaultAmounts(user));
+                                                }
                                             }
                                             catch (SQLException e) {
                                                 throw new RuntimeException(e);
@@ -149,6 +157,12 @@ public class Authorization extends AppCompatActivity {
                 });
             }
         });
+
+        btn_without_login_tv.setOnClickListener(view -> {
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
+            finish();
+        });
     }
 
     private void init() {
@@ -170,6 +184,7 @@ public class Authorization extends AppCompatActivity {
         forgot_password_tv = findViewById(R.id.forgot_password);
         reg_btn_tv = findViewById(R.id.reg_btn);
         btn_entry = findViewById(R.id.BtnAuthReg);
+        btn_without_login_tv = findViewById(R.id.btn_without_login);
 
         getSupportActionBar().hide();
     }
@@ -218,6 +233,15 @@ public class Authorization extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        try {
+            if (conn != null) db.closeConnect(conn);
+            if (st != null) st.close();
+            if (rs != null) rs.close();
+        }
+        catch (SQLException e) {
+            e.getMessage();
+        }
+
         super.onDestroy();
     }
 }
