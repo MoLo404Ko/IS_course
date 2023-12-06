@@ -7,260 +7,84 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@drawable/shape_bg_general_fragment"
     android:elevation="10dp">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/constraint_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="12dp">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/incomes"
+                android:layout_marginLeft="10dp"
+                style="@style/boldFont"
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+            </TextView>
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/constraint_layout"
+            <TextView
+                android:id="@+id/incomes_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                style="@style/boldFont"
+
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
+            </TextView>
+
+            <ListView
+                android:id="@+id/category_income_list"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
+                android:divider="@color/transparent"
+                android:dividerHeight="7dp"
+                android:layout_marginTop="12dp"
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/incomes"
-                    android:layout_marginLeft="10dp"
-                    style="@style/boldFont"
+                app:layout_constraintTop_toBottomOf="@id/incomes_text"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent">
+            </ListView>
 
-                    app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    >
-                </TextView>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/expenses"
+                android:layout_marginLeft="10dp"
+                android:layout_marginTop="12dp"
 
-                <TextView
-                    android:id="@+id/incomes_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/default_sum"
-                    android:layout_marginRight="10dp"
-                    style="@style/boldFont"
+                style="@style/boldFont"
 
-                    app:layout_constraintRight_toRightOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
-                </TextView>
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/category_income_list">
+            </TextView>
 
-                <ListView
-                    android:id="@+id/category_list"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+            <TextView
+                android:id="@+id/expenses_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:layout_marginTop="12dp"
 
-                    app:layout_constraintTop_toBottomOf="@id/incomes_text"
-                    app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintRight_toRightOf="parent">
-                </ListView>
+                style="@style/boldFont"
 
-<!--                <RelativeLayout-->
-<!--                    android:id="@+id/salary_category"-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="45dp"-->
-<!--                    android:layout_marginTop="12dp"-->
-<!--                    android:background="@drawable/shape_green_bg"-->
+                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/category_income_list">
+            </TextView>
 
-<!--                    app:layout_constraintTop_toBottomOf="@id/incomes_text"-->
-<!--                    app:layout_constraintLeft_toLeftOf="parent"-->
-<!--                    app:layout_constraintRight_toRightOf="parent">-->
+            <ListView
+                android:id="@+id/category_expense_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:divider="@color/transparent"
+                android:dividerHeight="7dp"
+                android:layout_marginTop="12dp"
 
-<!--                    <LinearLayout-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_centerVertical="true">-->
-
-<!--                        <RelativeLayout-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="match_parent"-->
-<!--                            android:layout_weight="2">-->
-
-<!--                            <ImageView-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:src="@drawable/ic_bag"-->
-<!--                                android:layout_marginLeft="10dp">-->
-<!--                            </ImageView>-->
-
-<!--                            <TextView-->
-<!--                                android:id="@+id/salary_name"-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                style = "@style/boldFont"-->
-
-
-<!--                                android:layout_marginLeft="50dp"-->
-<!--                                android:textSize="14sp"-->
-<!--                                android:textColor="@color/white"-->
-
-<!--                                android:layout_centerVertical="true">-->
-<!--                            </TextView>-->
-<!--                        </RelativeLayout>-->
-
-<!--                        <TextView-->
-<!--                            android:id="@+id/salary_procent"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-
-<!--                            style = "@style/boldFont"-->
-<!--                            android:textColor="@color/white"-->
-
-<!--                            android:layout_marginRight="120dp">-->
-<!--                        </TextView>-->
-
-<!--                        <TextView-->
-<!--                            android:id="@+id/salary_sum"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-
-<!--                            style = "@style/boldFont"-->
-<!--                            android:textColor="@color/white"-->
-
-<!--                            android:layout_marginRight="10dp">-->
-<!--                        </TextView>-->
-<!--                    </LinearLayout>-->
-
-
-<!--                </RelativeLayout>-->
-
-<!--                <RelativeLayout-->
-<!--                    android:id="@+id/present_category"-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="45dp"-->
-<!--                    android:layout_marginTop="12dp"-->
-<!--                    android:background="@drawable/shape_red_bg"-->
-
-<!--                    app:layout_constraintTop_toBottomOf="@id/salary_category"-->
-<!--                    app:layout_constraintLeft_toLeftOf="parent"-->
-<!--                    app:layout_constraintRight_toRightOf="parent">-->
-
-<!--                    <LinearLayout-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_centerVertical="true">-->
-
-<!--                        <RelativeLayout-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="match_parent"-->
-<!--                            android:layout_weight="2">-->
-
-<!--                            <ImageView-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:src="@drawable/ic_present"-->
-<!--                                android:layout_marginLeft="10dp">-->
-<!--                            </ImageView>-->
-
-<!--                            <TextView-->
-<!--                                android:id="@+id/present_name"-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-
-<!--                                style = "@style/boldFont"-->
-<!--                                android:layout_marginLeft="50dp"-->
-<!--                                android:textSize="14sp"-->
-<!--                                android:textColor="@color/white"-->
-
-<!--                                android:layout_centerVertical="true">-->
-<!--                            </TextView>-->
-<!--                        </RelativeLayout>-->
-
-<!--                        <TextView-->
-<!--                            android:id="@+id/present_procent"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-
-<!--                            style = "@style/boldFont"-->
-<!--                            android:textColor="@color/white"-->
-
-<!--                            android:layout_marginRight="120dp">-->
-<!--                        </TextView>-->
-
-<!--                        <TextView-->
-<!--                            android:id="@+id/present_sum"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-
-<!--                            style = "@style/boldFont"-->
-<!--                            android:textColor="@color/white"-->
-
-<!--                            android:layout_marginRight="10dp">-->
-<!--                        </TextView>-->
-<!--                    </LinearLayout>-->
-
-
-<!--                </RelativeLayout>-->
-
-<!--                <RelativeLayout-->
-<!--                    android:id="@+id/invest_category"-->
-<!--                    android:layout_width="match_parent"-->
-<!--                    android:layout_height="45dp"-->
-<!--                    android:layout_marginTop="12dp"-->
-<!--                    android:background="@drawable/shape_sea_bg"-->
-
-<!--                    app:layout_constraintTop_toBottomOf="@id/present_category"-->
-<!--                    app:layout_constraintLeft_toLeftOf="parent"-->
-<!--                    app:layout_constraintRight_toRightOf="parent">-->
-
-<!--                    <LinearLayout-->
-<!--                        android:layout_width="match_parent"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_centerVertical="true">-->
-
-<!--                        <RelativeLayout-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="match_parent"-->
-<!--                            android:layout_weight="2">-->
-
-<!--                            <ImageView-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:src="@drawable/ic_grow"-->
-<!--                                android:layout_marginLeft="10dp">-->
-<!--                            </ImageView>-->
-
-<!--                            <TextView-->
-<!--                                android:id="@+id/grow_name"-->
-<!--                                android:layout_width="wrap_content"-->
-<!--                                android:layout_height="wrap_content"-->
-
-<!--                                android:layout_marginLeft="50dp"-->
-<!--                                android:textSize="14sp"-->
-<!--                                android:textColor="@color/white"-->
-<!--                                style = "@style/boldFont"-->
-
-
-<!--                                android:layout_centerVertical="true">-->
-<!--                            </TextView>-->
-<!--                        </RelativeLayout>-->
-
-<!--                        <TextView-->
-<!--                            android:id="@+id/grow_procent"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-
-<!--                            style = "@style/boldFont"-->
-<!--                            android:textColor="@color/white"-->
-
-<!--                            android:layout_marginRight="120dp">-->
-<!--                        </TextView>-->
-
-<!--                        <TextView-->
-<!--                            android:id="@+id/grow_sum"-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-
-<!--                            style = "@style/boldFont"-->
-<!--                            android:textColor="@color/white"-->
-
-<!--                            android:layout_marginRight="10dp">-->
-<!--                        </TextView>-->
-<!--                    </LinearLayout>-->
-
-
-<!--                </RelativeLayout>-->
-
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-    </ScrollView>
-
+                app:layout_constraintTop_toBottomOf="@id/incomes_text"
+                app:layout_constraintLeft_toLeftOf="parent"
+                app:layout_constraintRight_toRightOf="parent">
+            </ListView>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 </FrameLayout>

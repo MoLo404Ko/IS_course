@@ -38,7 +38,7 @@ public class Queries {
 
     /* --------------------------------------- FRAGMENT GENERAL ----------------------------------*/
     public static String getCategory(User user) {
-        String query = "SELECT category_sum, name_category, category_icon " +
+        String query = "SELECT category_sum, name_category, category_icon, bg_category " +
                 "FROM category_income where ID_user = " + user.getID_user();
         return query;
     }

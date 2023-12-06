@@ -1,11 +1,16 @@
 package app.course.Main;
 
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -24,22 +29,28 @@ import app.course.Queries;
 import app.course.R;
 import app.course.User;
 import app.course.authorization.DataBaseHandler;
+import app.course.category.Category;
+import app.course.category.CategoryAdapter;
 
 public class FragmentGeneral extends Fragment {
     private TextView salary_sum, salary_name, present_sum, present_name, grow_sum, grow_name;
 
-    private ListView category_list;
+    private ArrayList<Category> categories;
+    private CategoryAdapter categories_adapter;
+    private ListView category_income_list;
+
     private List<String> category_names = new ArrayList<String>();
     private List<Integer> category_sum = new ArrayList<Integer>();
-    private List<String> category_icons = new ArrayList<String>();
+    private List<Integer> category_icons = new ArrayList<Integer>();
+    private List<Double> category_procents = new ArrayList<Double>();
+    private List<Integer> category_bg = new ArrayList<Integer>();
 
-
+    private FrameLayout main;
     private DataBaseHandler dataBaseHandler = DataBaseHandler.getDataBaseHadler();
     private Connection connection = null;
     private Statement statement = null;
     private ResultSet resultSet = null;
     private ExecutorService executorService = null;
-    private ExecutorService executorService1 = null;
     private Handler handler = null;
 
     private User user = User.getUser();
@@ -56,78 +67,55 @@ public class FragmentGeneral extends Fragment {
         View view = inflater.inflate(R.layout.fragment_general, container, false);
         init(view);
 
-//        salary_category.setOnClickListener(v -> {
-//        });
-
         return view;
     }
 
     private void init(View view) {
-//        executorService = Executors.newSingleThreadExecutor();
-//
-//        executorService.execute(() ->{
-//            try {
-//                connection = dataBaseHandler.connect(connection);
-//                statement = connection.createStatement();
-//                resultSet = statement.executeQuery(Queries.getCategory(user));
-//
-//                if (!resultSet.next()) {
-//                    new Thread(() -> {
-//                        try {
-//                            statement.executeUpdate(Queries.setDefSumCategory(user));
-//
-//                            category_names.add("Зарплата");
-//                            category_names.add("Зарплата");
-//                            category_names.add("Зарплата");
-//
-//                            category_sum.add(0);
-//                            category_sum.add(0);
-//                            category_sum.add(0);
-//                        }
-//                        catch (SQLException e) {
-//                            Log.d("MyLog", e.getMessage() + " " + e.getStackTrace());
-//                        }
-//                    });
+        main = view.findViewById(R.id.main_layout);
 
-//                    category_names.add("Зарплата");
-//                    category_names.add("Зарплата");
-//                    category_names.add("Зарплата");
-//
-//                    category_sum.add(0);
-//                    category_sum.add(0);
-//                    category_sum.add(0);
-//
-//                    category_icons.add("R.drawable.ic_bag");
-//                    category_icons.add("R.drawable.ic_present");
-//                    category_icons.add("R.drawable.ic_grow");
-//                }
-//
-//                else {
-//                    while (resultSet.next()) {
-//                        category_sum.add(resultSet.getInt(1));
-//                        category_names.add(resultSet.getString(2));
-//                        category_icons.add(resultSet.getString(3));
-//                    }
-//                }
-//            }
-//            catch (SQLException | ClassNotFoundException e) {
-//                Log.d("MyLog", e.getMessage() + " " + e.getStackTrace());
-//            }
-//        });
+        categories = new ArrayList<Category>();
+        category_income_list = view.findViewById(R.id.category_income_list);
 
+        executorService = Executors.newSingleThreadExecutor();
+        handler = new Handler(Looper.getMainLooper());
 
-//        for (int i = 0; i < category_names.size(); i++) {
-//            category_date.add(new Category(category_icons.get(i), category_sum.get(i),
-//                    category_names.get(i)));
-//        }
+        executorService.execute(() ->{
+            try {
+                connection = dataBaseHandler.connect(connection);
+                statement = connection.createStatement();
+                resultSet = statement.executeQuery(Queries.getCategory(user));
 
-//        salary_sum = view.findViewById(R.id.salary_sum);
-//        present_sum = view.findViewById(R.id.present_sum);
-//        grow_sum = view.findViewById(R.id.grow_sum);
-//
-//        salary_name = view.findViewById(R.id.salary_name);
-//        present_name = view.findViewById(R.id.present_name);
-//        grow_name = view.findViewById(R.id.grow_name);
+                if (!resultSet.next()) {
+                    categories.add(new Category(getResources().getDrawable(R.drawable.shape_green_bg, getContext().getTheme()),
+                            R.drawable.ic_bag, 0, 0.0, "Зарплата"));
+                    categories.add(new Category(getResources().getDrawable(R.drawable.shape_red_bg, getContext().getTheme()),
+                            R.drawable.ic_present,0, 0.0, "Подарки"));
+                    categories.add(new Category(getResources().getDrawable(R.drawable.shape_sea_bg, getContext().getTheme()),
+                            R.drawable.ic_grow,
+                            0, 0.0, "Инвестиции"));
+                }
+
+                else {
+                    while (resultSet.next()) {
+                        category_sum.add(resultSet.getInt(1));
+                        category_names.add(resultSet.getString(2));
+                        category_icons.add(resultSet.getInt(3));
+                        category_bg.add(resultSet.getInt(4));
+                    }
+                }
+            }
+            catch (SQLException | ClassNotFoundException e) {
+                Log.d("MyLog", e.getMessage() + " " + e.getStackTrace());
+            }
+
+            handler.post(() -> {
+                categories_adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories);
+                category_income_list.setAdapter(categories_adapter);
+
+                categories.clear();
+            });
+        });
+        executorService.shutdown();
 
 //        executorService = Executors.newSingleThreadExecutor();
 //        executorService1 = Executors.newSingleThreadExecutor();

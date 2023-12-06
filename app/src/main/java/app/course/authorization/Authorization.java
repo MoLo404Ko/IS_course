@@ -1,5 +1,6 @@
 package app.course.authorization;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.app.Activity;
@@ -126,7 +127,6 @@ public class Authorization extends AppCompatActivity {
                                                         Intent intent = new Intent(Authorization.this, MainActivity.class);
 
                                                         startActivity(intent);
-                                                        finish();
                                                     }
 
                                                     else {
