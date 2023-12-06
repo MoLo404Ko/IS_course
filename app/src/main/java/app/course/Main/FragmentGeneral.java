@@ -14,7 +14,11 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import androidx.appcompat.content.res.AppCompatResources;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
+
+import org.checkerframework.checker.units.qual.C;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -43,7 +47,7 @@ public class FragmentGeneral extends Fragment {
     private List<Integer> category_sum = new ArrayList<Integer>();
     private List<Integer> category_icons = new ArrayList<Integer>();
     private List<Double> category_procents = new ArrayList<Double>();
-    private List<Integer> category_bg = new ArrayList<Integer>();
+    private List<String> category_bg = new ArrayList<String>();
 
     private FrameLayout main;
     private DataBaseHandler dataBaseHandler = DataBaseHandler.getDataBaseHadler();
@@ -86,22 +90,25 @@ public class FragmentGeneral extends Fragment {
                 resultSet = statement.executeQuery(Queries.getCategory(user));
 
                 if (!resultSet.next()) {
+                    Drawable item = AppCompatResources.getDrawable(getContext(), R.drawable.shape_item_bg);
+                    item.setTint(Color.parseColor("#747474"));
+
                     categories.add(new Category(getResources().getDrawable(R.drawable.shape_green_bg, getContext().getTheme()),
                             R.drawable.ic_bag, 0, 0.0, "Зарплата"));
                     categories.add(new Category(getResources().getDrawable(R.drawable.shape_red_bg, getContext().getTheme()),
                             R.drawable.ic_present,0, 0.0, "Подарки"));
                     categories.add(new Category(getResources().getDrawable(R.drawable.shape_sea_bg, getContext().getTheme()),
-                            R.drawable.ic_grow,
-                            0, 0.0, "Инвестиции"));
+                            R.drawable.ic_grow, 0, 0.0, "Инвестиции"));
                 }
 
                 else {
-                    while (resultSet.next()) {
-                        category_sum.add(resultSet.getInt(1));
-                        category_names.add(resultSet.getString(2));
-                        category_icons.add(resultSet.getInt(3));
-                        category_bg.add(resultSet.getInt(4));
-                    }
+//                    while (resultSet.next()) {
+//                        Drawable item = getResources().getDrawable(R.drawable.shape_item_bg);
+//                        item.setTint(resultSet.getInt(4));
+//
+//                        categories.add(new Category(Color.parseColor(resultSet.getString(4)), resultSet.getInt(3),
+//                                resultSet.getInt(1), 5.0, resultSet.getString(2)));
+//                    }
                 }
             }
             catch (SQLException | ClassNotFoundException e) {
@@ -115,7 +122,7 @@ public class FragmentGeneral extends Fragment {
                 categories.clear();
             });
         });
-        executorService.shutdown();
+//        executorService.shutdown();
 
 //        executorService = Executors.newSingleThreadExecutor();
 //        executorService1 = Executors.newSingleThreadExecutor();
