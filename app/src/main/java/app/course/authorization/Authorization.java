@@ -1,9 +1,7 @@
 package app.course.authorization;
 
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -15,42 +13,50 @@ import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import app.course.HashPassword;
 import app.course.Main.MainActivity;
 import app.course.Queries;
 import app.course.R;
 import app.course.User;
-import app.course.income.Income_activity;
+import app.course.category.Category;
+import app.course.category.CategoryPrepare;
 
 public class Authorization extends AppCompatActivity {
-
     private EditText login_field, password_field;
     private TextView forgot_password_tv, reg_btn_tv,  btn_without_login_tv;
     private Button btn_entry;
 
     private ExecutorService executorService = null;
-    private ExecutorService executorService1 = Executors.newSingleThreadExecutor();
     private Handler handler = null;
 
     private DataBaseHandler db;
     private Connection conn = null;
-    private Statement st = null;
+    private PreparedStatement statement = null;
     private ResultSet rs = null;
 
     private User user = User.getUser();
+
+    private ArrayList<String> amounts;
+    private ArrayList<CategoryPrepare> categories_income;
+    private ArrayList<CategoryPrepare> categories_expense;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +84,9 @@ public class Authorization extends AppCompatActivity {
         });
 
         btn_entry.setOnClickListener(view ->{
+            /**
+             * Проверка на наличие символов в поле логин
+             */
             if (login_field.getText().toString().isEmpty()) {
                 errorField("login_field", false, login_field);
                 moveAnim(login_field);
@@ -87,36 +96,43 @@ public class Authorization extends AppCompatActivity {
                 executorService = Executors.newSingleThreadExecutor();
                 executorService.execute(() -> {
                     try {
-                        rs = st.executeQuery(Queries.getLogin(login_field.getText().toString()));
+                        statement = conn.prepareStatement(Queries.getLogin());
+                        statement.setString(1, login_field.getText().toString());
+                        rs = statement.executeQuery();
 
                         handler.post(() -> {
                             try {
+                                /**
+                                 * Проверка наличия логина в БД
+                                 */
                                 if (rs.next()) {
                                     errorField("login_field", true, login_field);
 
                                     if (password_field.getText().toString().isEmpty())
                                         errorField("password_field", false, password_field);
                                     else {
-                                        executorService1.execute(() -> {
+                                        new Thread(() -> {
                                             String password = "";
                                             try {
-                                                rs = st.executeQuery(Queries.getPassword(login_field.getText().toString()));
-                                                while (rs.next()) password = rs.getString(1);
+                                                statement = conn.prepareStatement(Queries.getPassword());
+                                                statement.setString(1, login_field.getText().toString());
+                                                rs = statement.executeQuery();
 
-                                                rs = st.executeQuery(Queries.getIdUser(login_field.getText().toString()));
+                                                if (rs.next()) password = rs.getString(1);
+
+                                                statement = conn.prepareStatement(Queries.getIdUser());
+                                                statement.setString(1, login_field.getText().toString());
+                                                rs = statement.executeQuery();
+
                                                 while (rs.next()) user.setID_user(rs.getInt(1));
-
-                                                rs = st.executeQuery(Queries.getAmounts(user));
-
-                                                if (!rs.next()) {
-                                                    Log.d("MyLog", "entry");
-                                                    st.executeUpdate(Queries.setDefaultAmounts(user));
-                                                }
                                             }
                                             catch (SQLException e) {
                                                 throw new RuntimeException(e);
                                             }
 
+                                            /**
+                                             * Перевод пароля в ХЭШ и проверка на наличие такого же ХЭШ в БД
+                                             */
                                             try {
                                                 HashPassword hp = new HashPassword();
                                                 boolean isCorrect = hp.validatePassword(password_field.getText().toString(), password);
@@ -124,7 +140,20 @@ public class Authorization extends AppCompatActivity {
                                                 handler.post(()->{
                                                     if (isCorrect) {
                                                         errorField("password_field", true, password_field);
+
+                                                        try {
+                                                            amounts = getDropDown();
+                                                            categories_income = getCategoriesIncome();
+                                                            categories_expense = getCategoriesExpense();
+
+                                                        } catch (ExecutionException | InterruptedException e) {
+                                                            Log.d("MyLog", e.getMessage() + " " + e.getStackTrace());
+                                                        }
+
                                                         Intent intent = new Intent(Authorization.this, MainActivity.class);
+                                                        intent.putExtra("amounts", amounts);
+                                                        intent.putExtra("categories_income", categories_income);
+                                                        intent.putExtra("categories_expense", categories_expense);
 
                                                         startActivity(intent);
                                                     }
@@ -138,7 +167,7 @@ public class Authorization extends AppCompatActivity {
                                             catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
                                                 e.getMessage();
                                             }
-                                        });
+                                        }).start();
                                     }
                                 }
                                 else {
@@ -157,6 +186,7 @@ public class Authorization extends AppCompatActivity {
                 });
             }
         });
+        executorService.shutdown();
 
         btn_without_login_tv.setOnClickListener(view -> {
             Intent intent = new Intent(this, MainActivity.class);
@@ -166,13 +196,17 @@ public class Authorization extends AppCompatActivity {
     }
 
     private void init() {
+        amounts = new ArrayList<>();
+        categories_income = new ArrayList<>();
+        categories_expense = new ArrayList<>();
+
         db = DataBaseHandler.getDataBaseHadler();
         handler = new Handler(Looper.getMainLooper());
+        executorService = Executors.newSingleThreadExecutor();
 
         new Thread(() -> {
             try {
                 conn = db.connect(conn);
-                st = conn.createStatement();
             }
             catch (SQLException | RuntimeException | ClassNotFoundException e) {
                 e.getMessage();
@@ -230,12 +264,190 @@ public class Authorization extends AppCompatActivity {
 
         view.startAnimation(animationSet);
     }
+    // ---------------------------------------------------------------------------------------------
+    /**
+     * Метод получения счетов пользователя
+     * 1. Создается новый поток
+     * 2. В поток передается задача
+     * 3. Возвращается список счетов
+     */
+    private ArrayList<String> getDropDown() throws ExecutionException, InterruptedException {
+        ExecutorService es = Executors.newSingleThreadExecutor();
+        Future<ArrayList> future = es.submit(new GetDropDownTask(conn));
+
+        es.shutdown();
+
+        return future.get();
+    }
+
+
+    /**
+     * Задача получения из базы данных счетов пользователя
+     * 1. Запрос счетов у базы данных
+     * 2. Проверка наличия счетов
+     */
+    private static class GetDropDownTask implements Callable<ArrayList> {
+        private Connection connection;
+        private PreparedStatement statement = null;
+        private ResultSet rs = null;
+        private ArrayList<String> amounts = new ArrayList<>();
+
+        public GetDropDownTask(Connection connection) {
+            this.connection = connection;
+        }
+
+        @Override
+        public ArrayList call() throws Exception {
+            boolean isFill = false;
+            statement = connection.prepareStatement(Queries.getAmounts());
+            statement.setInt(1, User.getUser().getID_user());
+            rs = statement.executeQuery();
+
+            while (rs.next()) {
+                isFill = true;
+                amounts.add(rs.getString(1));
+            }
+
+            if (!isFill) {
+                amounts.add("Основной счет");
+                statement.executeUpdate(Queries.setDefaultAmounts(User.getUser()));
+            }
+
+            statement.close();
+            rs.close();
+
+            return amounts;
+        }
+    }
+    // ---------------------------------------------------------------------------------------------
+    /**
+     * Метод получения списка категорий доходов
+     * @return список категорий
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
+    private ArrayList<CategoryPrepare> getCategoriesIncome() throws ExecutionException, InterruptedException {
+        ExecutorService es = Executors.newSingleThreadExecutor();
+        Future<ArrayList> future = es.submit(new getCategoriesTask(true, conn));
+        es.shutdown();
+
+        return future.get();
+    }
+
+    private ArrayList<CategoryPrepare> getCategoriesExpense() throws ExecutionException, InterruptedException {
+        ExecutorService es = Executors.newSingleThreadExecutor();
+        Future<ArrayList> future = es.submit(new getCategoriesTask(false, conn));
+        es.shutdown();
+
+        return future.get();
+    }
+
+    /**
+     * Класс получения списка категорий доходов
+     * 1. Выполнение запроса на получение списка
+     * 2. Если запрос не пустой - преобразование данных в нужный тип и распределение по спискам
+     * 2.1 Получение процентного соотношения
+     * 3. Если список пустой - добавление дефолтных категорий
+     * 3.1 Выполнеие запроса на добавление категорий
+     */
+    private static class getCategoriesTask implements Callable<ArrayList> {
+        private DecimalFormat df = new DecimalFormat("#.#");
+
+        private DataBaseHandler db = DataBaseHandler.getDataBaseHadler();
+        private Connection connection;
+        private PreparedStatement statement = null;
+        private ResultSet rs = null;
+
+        private ArrayList<CategoryPrepare> categories = new ArrayList<>();
+        private ArrayList<Integer> icons = new ArrayList<>();
+        private ArrayList<String> items = new ArrayList<>();
+        private ArrayList<Integer> sum = new ArrayList<>();
+        private ArrayList<String> names = new ArrayList<>();
+        private boolean isIncoming;
+
+        public getCategoriesTask(boolean isIncoming, Connection conn) {
+            this.isIncoming = isIncoming;
+            this.connection = conn;
+        }
+
+        @Override
+        public ArrayList call() throws Exception {
+            boolean isFill = false;
+            int total_sum = 0;
+            Double procent;
+
+            if (categories != null) categories.clear();
+
+            if (isIncoming) statement = connection.prepareStatement(Queries.getCategoryIncome());
+            else statement = connection.prepareStatement(Queries.getCategoryExpense());
+
+            statement.setInt(1, User.getUser().getID_user());
+            rs = statement.executeQuery();
+
+            while (rs.next()) {
+                isFill = true;
+
+                icons.add(rs.getInt(3));
+                items.add(rs.getString(4));
+                sum.add(rs.getInt(1));
+                names.add(rs.getString(2));
+            }
+            for (int i: sum) total_sum += i;
+
+            for (int i = 0; i < sum.size(); i++) {
+                if (sum.get(i) != 0) {
+                    procent = ((double)sum.get(i) / total_sum) * 100.0;
+                }
+                else procent = 0.0;
+
+                categories.add(new CategoryPrepare(items.get(i), icons.get(i), sum.get(i),
+                        df.format(procent), names.get(i)));
+            }
+
+            if (isIncoming) {
+                if (!isFill) {
+                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_green_bg),
+                            R.drawable.ic_bag, 0, "0,0", "Зарплата"));
+                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_red_bg),
+                            R.drawable.ic_present, 0, "0,0", "Подарки"));
+                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_sea_bg),
+                            R.drawable.ic_grow, 0, "0,0", "Инвестиции"));
+
+                    statement.executeUpdate(Queries.setDefaultCategoryIncome(User.getUser(),
+                            "Зарплата", "Подарки", "Инвестиции",
+                            R.drawable.ic_bag, R.drawable.ic_present, R.drawable.ic_grow,
+                            "#0F992D", "#BC1A37", "#00A4AE"));
+                }
+            }
+
+            else {
+                if (!isFill) {
+                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_green_bg),
+                            R.drawable.ic_basket, 0, "0,0", "Обязательные"));
+                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_red_bg),
+                            R.drawable.ic_entertaiment, 0, "0,0", "Необязательные"));
+
+                    statement.executeUpdate(Queries.setDefaultCategoryExpense(User.getUser(),
+                            "Обязательные", "Необязательные",
+                            R.drawable.ic_basket, R.drawable.ic_entertaiment,
+                            "#0F992D", "#BC1A37"));
+                }
+            }
+
+            statement.close();
+            rs.close();
+
+            return categories;
+        }
+    }
+    // ---------------------------------------------------------------------------------------------
+
 
     @Override
     protected void onDestroy() {
         try {
             if (conn != null) db.closeConnect(conn);
-            if (st != null) st.close();
+            if (statement != null) statement.close();
             if (rs != null) rs.close();
         }
         catch (SQLException e) {

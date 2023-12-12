@@ -40,6 +40,7 @@
 
     <string name="incomes">Доходы</string>
     <string name="expenses">Расходы</string>
+    <string name="general">Общий</string>
     <string name="default_sum">0$</string>
     <string name="salary_cat">Зарплата</string>
     <string name="present_cat">Подарки</string>

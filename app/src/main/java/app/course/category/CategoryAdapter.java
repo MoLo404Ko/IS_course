@@ -6,8 +6,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
+
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import java.util.List;
 
@@ -29,7 +30,7 @@ public class CategoryAdapter extends ArrayAdapter<Category> {
     public View getView(int position, View convertView, ViewGroup parent) {
         View view = inflater.inflate(this.layout, parent, false);
 
-        RelativeLayout category_layout = view.findViewById(R.id.category_layout);
+        ConstraintLayout category_layout = view.findViewById(R.id.category_layout);
         ImageView category_icon = view.findViewById(R.id.category_icon);
         TextView category_name = view.findViewById(R.id.category_name);
         TextView category_sum = view.findViewById(R.id.category_sum);
@@ -38,7 +39,7 @@ public class CategoryAdapter extends ArrayAdapter<Category> {
         Category category = categories.get(position);
 
         category_layout.setBackground(category.getBg_color_category());
-        category_icon.setImageResource(category.getIcon_category());
+        category_icon.setBackground(category.getIcon_category());
         category_name.setText(category.getName_category());
         category_sum.setText(String.valueOf(category.getSum_category()));
         category_procent.setText(String.valueOf(category.getCategory_procent()));

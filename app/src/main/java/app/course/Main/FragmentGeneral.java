@@ -9,57 +9,39 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import androidx.appcompat.content.res.AppCompatResources;
-import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
-
-import org.checkerframework.checker.units.qual.C;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import app.course.Queries;
 import app.course.R;
 import app.course.User;
 import app.course.authorization.DataBaseHandler;
 import app.course.category.Category;
+import app.course.category.CategoryPrepare;
 import app.course.category.CategoryAdapter;
 
 public class FragmentGeneral extends Fragment {
-    private TextView salary_sum, salary_name, present_sum, present_name, grow_sum, grow_name;
+    private ArrayList<CategoryPrepare> categories_income_prepare;
+    private ArrayList<CategoryPrepare> categories_expense_prepare;
+    private ArrayList<Category> categories_income;
+    private ArrayList<Category> categories_expense;
 
-    private ArrayList<Category> categories;
-    private CategoryAdapter categories_adapter;
+    private CategoryAdapter categories_income_adapter;
+    private CategoryAdapter categories_expense_adapter;
+
     private ListView category_income_list;
-
-    private List<String> category_names = new ArrayList<String>();
-    private List<Integer> category_sum = new ArrayList<Integer>();
-    private List<Integer> category_icons = new ArrayList<Integer>();
-    private List<Double> category_procents = new ArrayList<Double>();
-    private List<String> category_bg = new ArrayList<String>();
-
-    private FrameLayout main;
-    private DataBaseHandler dataBaseHandler = DataBaseHandler.getDataBaseHadler();
-    private Connection connection = null;
-    private Statement statement = null;
-    private ResultSet resultSet = null;
-    private ExecutorService executorService = null;
-    private Handler handler = null;
-
-    private User user = User.getUser();
-
-    private int count_income = 0;
+    private ListView category_expense_list;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -75,105 +57,77 @@ public class FragmentGeneral extends Fragment {
     }
 
     private void init(View view) {
-        main = view.findViewById(R.id.main_layout);
+        categories_income = new ArrayList<>();
+        categories_expense = new ArrayList<>();
 
-        categories = new ArrayList<Category>();
         category_income_list = view.findViewById(R.id.category_income_list);
+        category_expense_list = view.findViewById(R.id.category_expense_list);
 
-        executorService = Executors.newSingleThreadExecutor();
-        handler = new Handler(Looper.getMainLooper());
+        Bundle bundle = this.getArguments();
 
-        executorService.execute(() ->{
-            try {
-                connection = dataBaseHandler.connect(connection);
-                statement = connection.createStatement();
-                resultSet = statement.executeQuery(Queries.getCategory(user));
+        if (bundle != null) {
+            categories_income_prepare = (ArrayList<CategoryPrepare>) bundle.getSerializable("categories_income");
+            categories_expense_prepare = (ArrayList<CategoryPrepare>) bundle.getSerializable("categories_expense");
+        }
 
-                if (!resultSet.next()) {
-                    Drawable item = AppCompatResources.getDrawable(getContext(), R.drawable.shape_item_bg);
-                    item.setTint(Color.parseColor("#747474"));
+        setCategoryData(categories_income_prepare, categories_income, categories_income_adapter, category_income_list);
+        setCategoryData(categories_expense_prepare, categories_expense, categories_expense_adapter, category_expense_list);
 
-                    categories.add(new Category(getResources().getDrawable(R.drawable.shape_green_bg, getContext().getTheme()),
-                            R.drawable.ic_bag, 0, 0.0, "Зарплата"));
-                    categories.add(new Category(getResources().getDrawable(R.drawable.shape_red_bg, getContext().getTheme()),
-                            R.drawable.ic_present,0, 0.0, "Подарки"));
-                    categories.add(new Category(getResources().getDrawable(R.drawable.shape_sea_bg, getContext().getTheme()),
-                            R.drawable.ic_grow, 0, 0.0, "Инвестиции"));
-                }
-
-                else {
-//                    while (resultSet.next()) {
-//                        Drawable item = getResources().getDrawable(R.drawable.shape_item_bg);
-//                        item.setTint(resultSet.getInt(4));
-//
-//                        categories.add(new Category(Color.parseColor(resultSet.getString(4)), resultSet.getInt(3),
-//                                resultSet.getInt(1), 5.0, resultSet.getString(2)));
-//                    }
-                }
-            }
-            catch (SQLException | ClassNotFoundException e) {
-                Log.d("MyLog", e.getMessage() + " " + e.getStackTrace());
-            }
-
-            handler.post(() -> {
-                categories_adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories);
-                category_income_list.setAdapter(categories_adapter);
-
-                categories.clear();
-            });
-        });
-//        executorService.shutdown();
-
-//        executorService = Executors.newSingleThreadExecutor();
-//        executorService1 = Executors.newSingleThreadExecutor();
-//
-//        handler = new Handler(getActivity().getMainLooper());
-//
-//        executorService.execute(() ->{
-//            try {
-//                connection = dataBaseHandler.connect(connection);
-//                statement = connection.createStatement();
-//                resultSet = statement.executeQuery(Queries.getSumCategory(user));
-//            }
-//            catch (SQLException | ClassNotFoundException e) {
-//                Log.d("MyLog", e.getMessage());
-//            }
-//
-//            handler.post(() ->{
-//                try {
-//                    if (!resultSet.next()) {
-//                        executorService1.execute(() -> {
-//                            try {
-//                                Log.d("MyLog", "3");
-//                                statement.executeUpdate(Queries.setSumCategory(user));
-//                            }
-//                            catch (SQLException e) {
-//                                Log.d("MyLog", e.getMessage() + " " + e.getStackTrace());
-//                            }
-//                        });
-//                        executorService1.shutdown();
-//
-//                        salary_sum.setText("0$");
-//                        present_sum.setText("0$");
-//                        grow_sum.setText("0$");
-//
-//                        salary_name.setText("Зарплата");
-//                        present_name.setText("Подарки");
-//                        grow_name.setText("Инвестиции");
-//                    }
-//
-//                    else {
-//                        Log.d("MyLog", "3");
-//                        while (resultSet.next()) {
-//                            salary_sum.setText(resultSet.getInt(0));
-//                            salary_name.setText(resultSet.getString(1));
-//                        }
-//                    }
-//                }
-//                catch (SQLException e) {
-//                    Log.d("MyLog", e.getMessage() + " 1");
-//                }
-//            });
-//        });
+        setHeightListView(category_expense_list);
     }
+
+
+    // ---------------------------------------------------------------------------------------------
+    /**
+     * Метод, загружающий данные в категории
+     * 1. Загружается икнока по ID и устанавливается цвет на шаблон
+     * 2. Создается новая категория
+     * 3. Настравивается адаптер
+     * @param prepare_categories подготовленные данные для ввода в список
+     * @param categories категории, в которые добавляются данные
+     * @param adapter адаптер списка
+     * @param listView отображаемый список категорий
+     */
+    private void setCategoryData(ArrayList<CategoryPrepare> prepare_categories, ArrayList<Category>
+            categories, CategoryAdapter adapter, ListView listView) {
+        for (int i = 0; i < prepare_categories.size(); i++) {
+            Drawable item = AppCompatResources.getDrawable(getActivity().getBaseContext(), R.drawable.shape_item_bg);
+            Drawable icon = getActivity().getBaseContext().getResources().getDrawable(prepare_categories.
+                    get(i).getIcon_category(), getActivity().getBaseContext().getTheme());
+
+            item.setTint(Color.parseColor(prepare_categories.get(i).getBg_color_category()));
+
+            categories.add(new Category(item, icon, prepare_categories.get(i).getSum_category(),
+                    prepare_categories.get(i).getCategory_procent(),
+                    prepare_categories.get(i).getName_category()));
+
+            adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories);
+            listView.setAdapter(adapter);
+        }
+    }
+    // ---------------------------------------------------------------------------------------------
+
+
+    // ---------------------------------------------------------------------------------------------
+    /**
+     * Метод, устанавливающий высоту для списка категорий
+     * @param listView отображаемый список категорий
+     */
+    private void setHeightListView(ListView listView) {
+        int totalHeight = 0;
+        ListAdapter listAdapter = listView.getAdapter();
+
+        if (listAdapter == null) return;
+
+        for (int i = 0, len = listAdapter.getCount(); i < len; i++) {
+            View listItem = listAdapter.getView(i, null, listView);
+            listItem.measure(0,0);
+            totalHeight += listItem.getMeasuredHeight();
+        }
+
+        ViewGroup.LayoutParams params = listView.getLayoutParams();
+        params.height = totalHeight + (listView.getDividerHeight() * (listAdapter.getCount() - 1));
+        listView.setLayoutParams(params);
+    }
+    // ---------------------------------------------------------------------------------------------
 }

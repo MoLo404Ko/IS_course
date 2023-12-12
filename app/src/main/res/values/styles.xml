@@ -25,9 +25,15 @@
         <item name="android:background">@drawable/shape_edit_text_dialog</item>
     </style>
 
-    <style name="boldFont">
+    <style name="boldFont_16">
         <item name="android:textSize">16sp</item>
         <item name="fontFamily">@font/rubik_medium</item>
         <item name="android:textColor">@color/black</item>
     </style>
+
+    <style name="BoldFontBlue_14">
+        <item name="android:fontFamily">@font/rubik_medium</item>
+        <item name="android:textColor">@color/blue_general</item>
+    </style>
+
 </resources>

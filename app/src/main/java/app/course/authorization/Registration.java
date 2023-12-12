@@ -20,6 +20,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -41,7 +42,7 @@ public class Registration extends AppCompatActivity {
 
     private DataBaseHandler dataBaseHandler;
     private Connection conn = null;
-    private Statement statement= null;
+    private PreparedStatement statement = null;
     private ResultSet rs = null;
 
     private ExecutorService executorService = null;
@@ -76,8 +77,10 @@ public class Registration extends AppCompatActivity {
                 executorService = Executors.newSingleThreadExecutor();
                 executorService.execute(() -> {
                     try {
-                        rs = statement.executeQuery("SELECT login from user WHERE login = \'"
-                                + login_field.getText().toString() + "\'");
+                        statement = conn.prepareStatement(Queries.getLogin());
+                        statement.setString(1, login_field.getText().toString());
+                        rs = statement.executeQuery();
+
 
                         handler.post(() -> {
                             try {
@@ -134,8 +137,12 @@ public class Registration extends AppCompatActivity {
                                                 HashPassword hp = new HashPassword(password_field.getText().toString());
                                                 String password = hp.getHash();
 
-                                                statement.executeUpdate(Queries.newUser(login_field.getText().toString(),
-                                                        password, name_field.getText().toString()));
+                                                statement = conn.prepareStatement(Queries.newUser());
+                                                statement.setString(1, name_field.getText().toString());
+                                                statement.setString(2, login_field.getText().toString());
+                                                statement.setString(3, password);
+                                                statement.executeUpdate();
+
                                                 finish();
                                             }
                                         } catch (SQLException | NoSuchAlgorithmException
@@ -171,7 +178,6 @@ public class Registration extends AppCompatActivity {
         new Thread(() -> {
             try {
                 conn = dataBaseHandler.connect(conn);
-                statement = conn.createStatement();
             }
             catch (ClassNotFoundException | SQLException e) {
                 e.getMessage();

@@ -1,16 +1,18 @@
 package app.course.category;
 
 import android.graphics.drawable.Drawable;
+import android.os.Parcel;
+import android.os.Parcelable;
 
 public class Category {
     private Drawable bg_color_category;
-    private int icon_category;
+    private Drawable icon_category;
     private int sum_category;
-    private Double category_procent;
+    private String category_procent;
     private String name_category;
 
-    public Category(Drawable bg_color_category, int icon_category, int sum_category, Double category_procent,
-                    String name_category) {
+    public Category(Drawable bg_color_category, Drawable icon_category, int sum_category, String category_procent,
+                           String name_category) {
         this.bg_color_category = bg_color_category;
         this.icon_category = icon_category;
         this.sum_category = sum_category;
@@ -22,7 +24,7 @@ public class Category {
         return bg_color_category;
     }
 
-    public int getIcon_category() {
+    public Drawable getIcon_category() {
         return icon_category;
     }
 
@@ -34,7 +36,8 @@ public class Category {
         return name_category;
     }
 
-    public Double getCategory_procent() {
+    public String getCategory_procent() {
         return category_procent;
     }
+
 }
