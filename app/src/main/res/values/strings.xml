@@ -49,4 +49,17 @@
     <string name="must_exp">Обязательные</string>
     <string name="no_must_exp">Необязательные</string>
 
+    <string name="name_add_dialog">Название</string>
+    <string name="sum_add_dialog">Сумма</string>
+    <string name="date_add_dialog">Дата</string>
+    <string name="income_add_dialog">Доходы</string>
+    <string name="expense_add_dialog">Расходы</string>
+
+    <string name="add_category_text">Добавить категорию</string>
+
+    <string name="add_category_name">Название категории</string>
+    <string name="add_colors">Цвет</string>
+    <string name="add_icon">Иконка</string>
+    <string name="add_category_btn">Добавить</string>
+
 </resources>

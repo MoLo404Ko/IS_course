@@ -3,6 +3,7 @@ package app.course.Main;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.app.DatePickerDialog;
@@ -10,12 +11,16 @@ import android.app.Dialog;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.DatePicker;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
@@ -28,18 +33,20 @@ import org.eazegraph.lib.charts.PieChart;
 import org.eazegraph.lib.models.PieModel;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import app.course.Queries;
 import app.course.R;
 import app.course.User;
 import app.course.authorization.DataBaseHandler;
+import app.course.category.Category;
 import app.course.category.CategoryPrepare;
 import app.course.menu_fragments.AmountsFragment;
 import app.course.menu_fragments.CategoryFragment;
@@ -48,6 +55,9 @@ import app.course.menu_fragments.SettingsFragment;
 
 
 public class MainActivity extends AppCompatActivity {
+//    private TextView general_sum;
+    private int income_sum;
+//    private int expense_sum;
     private Bundle extras = null;
     private Bundle args = null;
 
@@ -55,9 +65,15 @@ public class MainActivity extends AppCompatActivity {
     private ScrollView main_fragment;
     private LinearLayout shadow_layout, buttons_linear;
     private PieChart pieChart;
+    private RelativeLayout pieChart_layout;
+    private FrameLayout sub_fragment;
+
+    RelativeLayout all_time, one_day, week, month, range, year;
 
     private FragmentTransaction fragmentTransaction = null;
+    private FragmentGeneral fragmentGeneral = null;
     private Button datePicker;
+    private ImageButton add_button, minus_button, history_button;
     private Spinner dropDown;
     private Calendar calendar;
 
@@ -67,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
     private User user = User.getUser();
     private DataBaseHandler db = DataBaseHandler.getDataBaseHadler();
     private Connection conn = null;
-    private Statement st = null;
+    private PreparedStatement st = null;
     private ResultSet rs = null;
 
     private ArrayList<CategoryPrepare> categories_income;
@@ -110,33 +126,20 @@ public class MainActivity extends AppCompatActivity {
             dialog.setContentView(R.layout.custom_dialog_date);
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
-            RelativeLayout all_time, one_day, week, month, range, year;
+            one_day = (RelativeLayout)dialog.findViewById(R.id.one_day_btn);
 
-            one_day = (RelativeLayout)dialog.findViewById(R.id.all_time_btn);
-
-            one_day.setOnClickListener(dialog_view -> {
-                DatePickerDialog datePickerDialog = new DatePickerDialog(MainActivity.this);
-                datePickerDialog.setOnDateSetListener(new DatePickerDialog.OnDateSetListener() {
-                    @Override
-                    public void onDateSet(DatePicker dateP, int i, int i1, int i2) {
-                        datePicker.setText(String.valueOf(i) + "." + String.valueOf(i1) + "." + String.valueOf(i2));
-
-                        executorService.execute(() -> {
-
-                        });
-
-                    }
-                });
-
-                datePickerDialog.show();
+            one_day.setOnClickListener(view_1 -> {
+                setDatePicker(view_1);
             });
-
 
             dialog.show();
         });
     }
 
     public void init() throws SQLException {
+        add_button = findViewById(R.id.add_btn);
+
+        sub_fragment = findViewById(R.id.sub_fragment);
         extras = getIntent().getExtras();
 
         main_layout = findViewById(R.id.main_layout);
@@ -147,11 +150,9 @@ public class MainActivity extends AppCompatActivity {
 
         pieChart = new PieChart(this);
         pieChart.setId(View.generateViewId());
+        pieChart_layout = findViewById(R.id.piechart_layout);
 
         setHeightFragment(main_fragment, shadow_layout);
-
-//        pieChart = findViewById(R.id.piechart);
-//        setPieChart();
 
         calendar = Calendar.getInstance();
         datePicker = findViewById(R.id.date_picker);
@@ -164,12 +165,13 @@ public class MainActivity extends AppCompatActivity {
 
         setDropDown();
 
-        FragmentGeneral fragmentGeneral = new FragmentGeneral();
+        fragmentGeneral = new FragmentGeneral(sub_fragment);
 
         categories_income = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_income");
         categories_expense = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_expense");
 
         Bundle args = new Bundle();
+
         args.putSerializable("categories_income", categories_income);
         args.putSerializable("categories_expense", categories_expense);
         fragmentGeneral.setArguments(args);
@@ -177,7 +179,6 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction = getSupportFragmentManager().beginTransaction();
         fragmentTransaction.replace(R.id.main_fragment, fragmentGeneral);
         fragmentTransaction.commit();
-
 
         setPieChart(buttons_linear, shadow_layout);
     }
@@ -200,10 +201,57 @@ public class MainActivity extends AppCompatActivity {
     }
     // ---------------------------------------------------------------------------------------------
 
-    private void setDatePicker() {
-        datePicker.setOnClickListener(view -> {
+    private void setDatePicker(View view) {
+        Handler handler = new Handler(Looper.getMainLooper());
+        ArrayList<Integer> list_incomes = new ArrayList<>();
 
-        });
+        switch (view.getId()) {
+            case R.id.one_day_btn: {
+                DatePickerDialog datePickerDialog = new DatePickerDialog(MainActivity.this);
+                datePickerDialog.setOnDateSetListener(new DatePickerDialog.OnDateSetListener() {
+                    @Override
+                    public void onDateSet(DatePicker dateP, int i, int i1, int i2) {
+
+                        datePicker.setText(String.valueOf(i) + "." + String.valueOf(i1 + 1) + "." + String.valueOf(i2));
+                        new Thread(() -> {
+
+                            try {
+                                conn = db.connect(conn);
+                                st = conn.prepareStatement(Queries.getSumForOneDay());
+                                st.setInt(1, user.getID_user());
+                                st.setString(2, String.valueOf(datePicker.getText()));
+
+                                rs = st.executeQuery();
+                                while (rs.next()) {
+                                    income_sum += rs.getInt(1);
+                                    list_incomes.add(rs.getInt(1));
+                                }
+                            }
+                            catch (SQLException | ClassNotFoundException e) {
+                                Log.d("MyLog", e.getMessage() + " " + e.getStackTrace());
+                            }
+                            finally {
+                                try {
+                                    if (conn != null) db.closeConnect(conn);
+                                    if (st != null) st.close();
+                                    if (rs != null) rs.close();
+                                }
+                                catch (SQLException e) {
+                                    Log.d("MyLog", e.getMessage() + " " + e.getStackTrace());
+                                }
+                            }
+                            handler.post(() -> {
+                                fragmentGeneral.setSum(income_sum, 0, 0, list_incomes);
+                            });
+                        }).start();
+
+
+                    }
+                });
+
+                datePickerDialog.show();
+            }
+        }
     }
 
     private void setHeightFragment(ScrollView main_fragment, LinearLayout shadow_layout) {
@@ -221,30 +269,36 @@ public class MainActivity extends AppCompatActivity {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
-//        float heightDp = (displayMetrics.heightPixels / 4 / ((float) getApplicationContext().getResources().
-//                getDisplayMetrics().densityDpi / DisplayMetrics.DENSITY_DEFAULT));
-
         float heightDp = displayMetrics.heightPixels / 4;
-        Log.d("MyLog", String.valueOf(heightDp));
-
 
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams
                 ((int)heightDp, (int)heightDp);
+        layoutParams.setMargins(0, 20, 0, 20);
+        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL, RelativeLayout.TRUE);
 
         addSlices(pieChart);
         pieChart.setLayoutParams(layoutParams);
-        main_layout.addView(pieChart);
+        pieChart_layout.addView(pieChart);
 
         ConstraintSet set = new ConstraintSet();
         set.clone(main_layout);
-        set.connect(pieChart.getId(), ConstraintSet.TOP, R.id.buttons_linear, ConstraintSet.BOTTOM, 20);
-        set.connect(pieChart.getId(), ConstraintSet.BOTTOM, R.id.shadow_layout, ConstraintSet.TOP, 20);
+
+        set.connect(pieChart.getId(), ConstraintSet.TOP, R.id.buttons_linear, ConstraintSet.BOTTOM);
+        set.connect(pieChart.getId(), ConstraintSet.BOTTOM, R.id.shadow_layout, ConstraintSet.TOP);
         set.connect(pieChart.getId(), ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT);
         set.connect(pieChart.getId(), ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT);
+
+        set.connect(R.id.total_sum, ConstraintSet.TOP, R.id.piechart_layout, ConstraintSet.TOP);
+        set.connect(R.id.total_sum, ConstraintSet.BOTTOM, R.id.piechart_layout, ConstraintSet.BOTTOM);
+        set.connect(R.id.total_sum, ConstraintSet.RIGHT, R.id.piechart_layout, ConstraintSet.RIGHT);
+        set.connect(R.id.total_sum, ConstraintSet.LEFT, R.id.piechart_layout, ConstraintSet.LEFT);
+
         set.applyTo(main_layout);
     }
 
     private void addSlices(PieChart pieChart) {
-        pieChart.addPieSlice(new PieModel("123", 100, Color.parseColor("#757575")));
+        pieChart.setInnerPadding(65f);
+        pieChart.addPieSlice(new PieModel("", 100,
+                getResources().getColor(R.color.blue_general, getTheme())));
     }
 }

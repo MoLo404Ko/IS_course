@@ -46,4 +46,9 @@ public class CategoryAdapter extends ArrayAdapter<Category> {
 
         return view;
     }
+
+    @Override
+    public boolean isEnabled(int position) {
+        return true;
+    }
 }

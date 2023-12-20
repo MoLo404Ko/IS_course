@@ -31,7 +31,8 @@
 
         app:layout_constraintTop_toBottomOf="@id/amounts_drop_down"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent">
+        app:layout_constraintRight_toRightOf="parent"
+        android:orientation="horizontal">
     </LinearLayout>
 
     <androidx.appcompat.widget.AppCompatButton
@@ -88,21 +89,88 @@
         </TextView>
     </LinearLayout>
 
-<!--    <RelativeLayout-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
+    <FrameLayout
+        android:id="@+id/sub_fragment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
 
-<!--        app:layout_constraintLeft_toLeftOf="parent"-->
-<!--        app:layout_constraintRight_toRightOf="parent"-->
-<!--        app:layout_constraintTop_toBottomOf="@id/buttons_linear">-->
+        app:layout_constraintTop_toTopOf="@id/piechart_layout"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
+    </FrameLayout>
 
-<!--        <org.eazegraph.lib.charts.PieChart-->
-<!--            android:id="@+id/piechart"-->
-<!--            android:layout_width="150dp"-->
-<!--            android:layout_height="150dp">-->
+    <RelativeLayout
+        android:id="@+id/piechart_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
 
-<!--        </org.eazegraph.lib.charts.PieChart>-->
-<!--    </RelativeLayout>-->
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/buttons_linear">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true">
+
+            <ImageButton
+                android:id="@+id/add_btn"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/ic_add">
+            </ImageButton>
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp">
+
+                <ImageButton
+                    android:id="@+id/minus_btn"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+
+                    android:src="@drawable/ic_minus">
+                </ImageButton>
+
+                <ImageButton
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+
+                    android:src="@drawable/shadow_btn"
+                    android:background="@color/shadow">
+                </ImageButton>
+            </RelativeLayout>
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/history_btn"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
+
+            android:src="@drawable/ic_history"
+            android:layout_centerVertical="true">
+        </ImageButton>
+    </RelativeLayout>
+
+
+
+    <TextView
+        android:id="@+id/total_sum"
+        style="@style/boldFont_16"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+
+        app:layout_constraintTop_toTopOf="@id/piechart_layout"
+        app:layout_constraintBottom_toBottomOf="@id/piechart_layout"
+        app:layout_constraintLeft_toLeftOf="@id/piechart_layout"
+        app:layout_constraintRight_toRightOf="@id/piechart_layout"
+        android:text="99999999$"></TextView>
 
 
     <LinearLayout

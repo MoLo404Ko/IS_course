@@ -3,27 +3,30 @@ package app.course.Main;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.FrameLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
+import app.course.DialogAddIncomeCategory;
+import app.course.Queries;
 import app.course.R;
 import app.course.User;
 import app.course.authorization.DataBaseHandler;
@@ -42,10 +45,67 @@ public class FragmentGeneral extends Fragment {
 
     private ListView category_income_list;
     private ListView category_expense_list;
+    private TextView incomes_text;
+    private TextView expense_text;
+    private TextView general_sum;
+    private RelativeLayout incomes_add_btn;
+
+    private int income_sum = 0;
+    private int expense_sum = 0;
+
+    private FrameLayout sub_fragment;
+    private ArrayList<Drawable> icons = new ArrayList<>();
+
+    private DataBaseHandler dataBaseHandler = null;
+    private Connection connection = null;
+    private PreparedStatement preparedStatement = null;
+    private ResultSet resultSet = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        getChildFragmentManager().setFragmentResultListener("requestKey", this,
+                (requestKey, result) -> {
+                    String color = result.getString("color");
+                    String name = result.getString("name");
+                    int id_icon = result.getInt("icon");
+
+                    Drawable bg = getResources().getDrawable(R.drawable.shape_item_bg, getContext().getTheme());
+                    bg.setTint(Color.parseColor(color));
+
+                    categories_income.add(new Category(bg, icons.get(id_icon), 0, "0", name));
+
+                    if (categories_income_adapter == null) {
+                        categories_income_adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories_income);
+                        category_income_list.setAdapter(categories_income_adapter);
+                    }
+
+                    setHeightListView(category_income_list);
+                    categories_income_adapter.notifyDataSetChanged();
+
+                    new Thread(() -> {
+                        try {
+                            connection = dataBaseHandler.connect(connection);
+                            preparedStatement = connection.prepareStatement(Queries.addNewIncomeCategory());
+                            preparedStatement.setInt(1, User.getUser().getID_user());
+                            preparedStatement.setInt(2, 0);
+                            preparedStatement.setString(3, name);
+
+                            preparedStatement.setInt(4, id_icon);
+                            preparedStatement.setString(5, color);
+                            preparedStatement.executeUpdate();
+                        }
+                        catch (SQLException | ClassNotFoundException e) {
+                            Log.d("MyLog", e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }).start();
+                });
+    }
+
+    public FragmentGeneral(FrameLayout sub_fragment) {
+        this.sub_fragment = sub_fragment;
     }
 
     @Override
@@ -53,27 +113,74 @@ public class FragmentGeneral extends Fragment {
         View view = inflater.inflate(R.layout.fragment_general, container, false);
         init(view);
 
+        category_income_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int pos, long l) {
+                sub_fragment.setBackgroundColor(getResources().getColor(R.color.black, getActivity().getTheme()));
+                IncomeFragment incomeFragment = new IncomeFragment();
+                FragmentTransaction fragmentTransaction1 = getActivity().getSupportFragmentManager().
+                        beginTransaction().replace(R.id.sub_fragment, incomeFragment);
+                fragmentTransaction1.commit();
+            }
+        });
+
+        incomes_add_btn.setOnClickListener(v -> {
+            DialogAddIncomeCategory dialogAddIncomeCategory = new DialogAddIncomeCategory();
+            dialogAddIncomeCategory.show(getChildFragmentManager(), "tag");
+        });
+
         return view;
     }
 
     private void init(View view) {
+        dataBaseHandler = DataBaseHandler.getDataBaseHadler();
+
+        icons.add(getResources().getDrawable(R.drawable.ic_bag, getContext().getTheme()));
+        icons.add(getResources().getDrawable(R.drawable.ic_basket, getContext().getTheme()));
+        icons.add(getResources().getDrawable(R.drawable.ic_grow, getContext().getTheme()));
+
+        incomes_add_btn = view.findViewById(R.id.incomes_add_btn);
+        general_sum = new TextView(getActivity());
+
         categories_income = new ArrayList<>();
         categories_expense = new ArrayList<>();
 
         category_income_list = view.findViewById(R.id.category_income_list);
         category_expense_list = view.findViewById(R.id.category_expense_list);
 
+        incomes_text = view.findViewById(R.id.incomes_text);
+        expense_text = view.findViewById(R.id.expenses_text);
+
         Bundle bundle = this.getArguments();
 
         if (bundle != null) {
             categories_income_prepare = (ArrayList<CategoryPrepare>) bundle.getSerializable("categories_income");
             categories_expense_prepare = (ArrayList<CategoryPrepare>) bundle.getSerializable("categories_expense");
+            Log.d("MyLog", "4");
         }
 
-        setCategoryData(categories_income_prepare, categories_income, categories_income_adapter, category_income_list);
-        setCategoryData(categories_expense_prepare, categories_expense, categories_expense_adapter, category_expense_list);
+        if (categories_income_prepare != null) {
+                Log.d("MyLog", "5");
+            if (!categories_income_prepare.isEmpty()) {
+                categories_income_adapter = setCategoryData(categories_income_prepare, categories_income, categories_income_adapter, category_income_list);
 
-        setHeightListView(category_expense_list);
+                for (Category c: categories_income) income_sum += c.getSum_category();
+                incomes_text.setText(String.valueOf(income_sum));
+                setHeightListView(category_income_list);
+            }
+        }
+
+        if (categories_expense_adapter != null) {
+            if (!categories_expense_adapter.isEmpty()) {
+                categories_expense_adapter = setCategoryData(categories_expense_prepare, categories_expense, categories_expense_adapter, category_expense_list);
+
+                for (Category c: categories_expense) expense_sum += c.getSum_category();
+                expense_text.setText(String.valueOf(expense_sum));
+                setHeightListView(category_expense_list);
+            }
+        }
+
+        general_sum.setText(String.valueOf(income_sum - expense_sum));
     }
 
 
@@ -88,12 +195,11 @@ public class FragmentGeneral extends Fragment {
      * @param adapter адаптер списка
      * @param listView отображаемый список категорий
      */
-    private void setCategoryData(ArrayList<CategoryPrepare> prepare_categories, ArrayList<Category>
+    private CategoryAdapter setCategoryData(ArrayList<CategoryPrepare> prepare_categories, ArrayList<Category>
             categories, CategoryAdapter adapter, ListView listView) {
         for (int i = 0; i < prepare_categories.size(); i++) {
             Drawable item = AppCompatResources.getDrawable(getActivity().getBaseContext(), R.drawable.shape_item_bg);
-            Drawable icon = getActivity().getBaseContext().getResources().getDrawable(prepare_categories.
-                    get(i).getIcon_category(), getActivity().getBaseContext().getTheme());
+            Drawable icon = icons.get(prepare_categories.get(i).getIcon_category());
 
             item.setTint(Color.parseColor(prepare_categories.get(i).getBg_color_category()));
 
@@ -103,10 +209,11 @@ public class FragmentGeneral extends Fragment {
 
             adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories);
             listView.setAdapter(adapter);
+
         }
+        return adapter;
     }
     // ---------------------------------------------------------------------------------------------
-
 
     // ---------------------------------------------------------------------------------------------
     /**
@@ -119,15 +226,43 @@ public class FragmentGeneral extends Fragment {
 
         if (listAdapter == null) return;
 
-        for (int i = 0, len = listAdapter.getCount(); i < len; i++) {
+        int len = listAdapter.getCount();
+
+        for (int i = 0; i < len;  i++) {
             View listItem = listAdapter.getView(i, null, listView);
             listItem.measure(0,0);
             totalHeight += listItem.getMeasuredHeight();
         }
+
 
         ViewGroup.LayoutParams params = listView.getLayoutParams();
         params.height = totalHeight + (listView.getDividerHeight() * (listAdapter.getCount() - 1));
         listView.setLayoutParams(params);
     }
     // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Метод, устанавливающий суммы для категорий и общую сумму из MainActivity
+     */
+    public void setSum(int income_sum, int expense_sum, int general, ArrayList<Integer> incomes_list) {
+        DecimalFormat df = new DecimalFormat("#.#");
+        int total_sum = 0;
+        double procent = 0.0;
+
+        incomes_text.setText(String.valueOf(income_sum));
+        expense_text.setText(String.valueOf(expense_sum));
+        general_sum.setText(String.valueOf(general));
+
+        for (int i = 0; i < incomes_list.size(); i++) {
+            total_sum += incomes_list.get(i);
+        }
+
+        for (int i = 0; i < incomes_list.size(); i++) {
+            procent = (double) (categories_income.get(i).getSum_category() / total_sum) * 100;
+            categories_income.get(i).setSum_category(incomes_list.get(i));
+            categories_income.get(i).setCategory_procent(df.format(procent));
+        }
+        categories_income_adapter.notifyDataSetChanged();
+    }
+
 }

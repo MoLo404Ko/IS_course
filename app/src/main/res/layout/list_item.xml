@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:descendantFocusability="blocksDescendants"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -90,76 +91,19 @@
                 app:layout_constraintTop_toTopOf="parent">
 
             </TextView>
-
-
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
-<!--    <RelativeLayout-->
-<!--        android:id="@+id/category_layout"-->
-<!--        android:layout_width="match_parent"-->
-<!--        android:layout_height="45dp"-->
-<!--        android:layout_marginRight="10dp"-->
-<!--        android:layout_marginLeft="10dp"-->
 
-<!--        app:layout_constraintLeft_toLeftOf="parent"-->
-<!--        app:layout_constraintRight_toRightOf="parent"-->
-<!--        app:layout_constraintTop_toTopOf="parent"-->
-<!--        app:layout_constraintBottom_toBottomOf="parent">-->
 
-<!--        <LinearLayout-->
-<!--            android:layout_width="match_parent"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_centerVertical="true">-->
+    <RelativeLayout
+        android:id="@+id/incomes_framgent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
 
-<!--            <RelativeLayout-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="match_parent"-->
-<!--                android:layout_weight="2">-->
-
-<!--                <ImageView-->
-<!--                    android:id="@+id/category_icon"-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-<!--                    android:layout_marginLeft="10dp">-->
-<!--                </ImageView>-->
-
-<!--                <TextView-->
-<!--                    android:id="@+id/category_name"-->
-<!--                    android:layout_width="wrap_content"-->
-<!--                    android:layout_height="wrap_content"-->
-
-<!--                    android:layout_marginLeft="50dp"-->
-<!--                    android:textSize="13sp"-->
-<!--                    android:textColor="@color/white"-->
-<!--                    style = "@style/boldFont"-->
-
-<!--                    android:layout_centerVertical="true">-->
-<!--                </TextView>-->
-<!--            </RelativeLayout>-->
-
-<!--            <TextView-->
-<!--                android:id="@+id/category_procent"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-
-<!--                style = "@style/boldFont"-->
-<!--                android:textSize="13sp"-->
-<!--                android:textColor="@color/white"-->
-
-<!--                android:layout_marginRight="120dp">-->
-<!--            </TextView>-->
-
-<!--            <TextView-->
-<!--                android:id="@+id/category_sum"-->
-<!--                android:layout_width="wrap_content"-->
-<!--                android:layout_height="wrap_content"-->
-
-<!--                android:textSize="13sp"-->
-<!--                android:textColor="@color/white"-->
-<!--                style = "@style/boldFont"-->
-
-<!--                android:layout_marginRight="10dp">-->
-<!--            </TextView>-->
-<!--        </LinearLayout>-->
-<!--    </RelativeLayout>-->
+        app:layout_constraintTop_toBottomOf="@id/category_layout"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
+    </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

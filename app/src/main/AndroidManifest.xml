@@ -16,9 +16,6 @@
         android:theme="@style/Theme.Course"
         tools:targetApi="31">
         <activity
-            android:name=".income.Income_activity"
-            android:exported="false" />
-        <activity
             android:name=".Main.MainActivity"
             android:exported="true">
 

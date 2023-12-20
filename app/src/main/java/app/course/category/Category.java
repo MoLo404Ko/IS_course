@@ -40,4 +40,12 @@ public class Category {
         return category_procent;
     }
 
+
+    public void setSum_category(int sum_category) {
+        this.sum_category = sum_category;
+    }
+
+    public void setCategory_procent(String category_procent) {
+        this.category_procent = category_procent;
+    }
 }

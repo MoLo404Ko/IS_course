@@ -23,4 +23,12 @@
     <color name="sea_bg">#00A4AE</color>
 
     <color name="shadow">#146D6D6D</color>
+    <color name="stroke_edit_text">#C9C9C9</color>
+
+    <color name="color_1">#DFFF83</color>
+    <color name="color_2">#D46761</color>
+    <color name="color_3">#565656</color>
+    <color name="color_4">#EE9797</color>
+    <color name="color_5">#D491DF</color>
+    <color name="color_6">#6079FB</color>
 </resources>
