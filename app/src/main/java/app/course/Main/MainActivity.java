@@ -165,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
 
         setDropDown();
 
-        fragmentGeneral = new FragmentGeneral(sub_fragment);
+        fragmentGeneral = new FragmentGeneral(getBaseContext(), getSupportFragmentManager());
 
         categories_income = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_income");
         categories_expense = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_expense");

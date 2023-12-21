@@ -27,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 
 import app.course.authorization.Authorization;
+import app.course.category.CategoryPrepare;
 
 public class DialogAddIncomeCategory extends DialogFragment {
     private static DialogAddIncomeCategory dialogAddIncomeCategory = new DialogAddIncomeCategory();
@@ -115,6 +116,12 @@ public class DialogAddIncomeCategory extends DialogFragment {
         result.putString("color", color);
         result.putInt("icon", id_icon);
         result.putString("name", name_add_category_income_edit.getText().toString());
+
+        CategoryPrepare object = new CategoryPrepare(color,id_icon, 0,"0",
+                name_add_category_income_edit.getText().toString());
+
+        result.putParcelable("object", object);
+
         getParentFragmentManager().setFragmentResult("requestKey", result);
     }
 

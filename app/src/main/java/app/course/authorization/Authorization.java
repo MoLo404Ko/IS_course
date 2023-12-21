@@ -167,12 +167,7 @@ public class Authorization extends AppCompatActivity {
                                                                         categories_expense = getCategoriesExpense();
                                                                     }
 
-                                                                    Intent intent = new Intent(Authorization.this, MainActivity.class);
-                                                                    intent.putExtra("amounts", amounts);
-                                                                    intent.putExtra("categories_income", categories_income);
-                                                                    intent.putExtra("categories_expense", categories_expense);
 
-                                                                    startActivity(intent);
 
                                                                 }
                                                                 catch (SQLException | ExecutionException | InterruptedException e) {
@@ -184,6 +179,13 @@ public class Authorization extends AppCompatActivity {
                                                             Log.d("MyLog", e.getMessage());
                                                             e.printStackTrace();
                                                         }
+
+                                                        Intent intent = new Intent(Authorization.this, MainActivity.class);
+                                                        intent.putExtra("amounts", amounts);
+                                                        intent.putExtra("categories_income", categories_income);
+                                                        intent.putExtra("categories_expense", categories_expense);
+
+                                                        startActivity(intent);
                                                     }
 
                                                     else {

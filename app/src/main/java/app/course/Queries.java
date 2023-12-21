@@ -99,5 +99,12 @@ public class Queries {
     }
     /* -------------------------------------------------------------------------------------------*/
 
+    /* ---------------------------------- FRAGMENT_SUB_CATEGORY ----------------------------------*/
+    public static String getSubCategories() {
+        String query = "SELECT name_sub_category, sub_sum, date_last entry FROM sub_category_income WHERE" +
+                "category_income.ID_category = sub_category_income.ID_category and ID_category = ?";
+        return query;
+    }
+
 
 }

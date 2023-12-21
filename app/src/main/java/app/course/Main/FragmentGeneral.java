@@ -1,5 +1,6 @@
 package app.course.Main;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import java.sql.Connection;
@@ -53,8 +55,11 @@ public class FragmentGeneral extends Fragment {
     private int income_sum = 0;
     private int expense_sum = 0;
 
-    private FrameLayout sub_fragment;
+    private FragmentManager fragmentManager;
     private ArrayList<Drawable> icons = new ArrayList<>();
+    private Context context;
+
+    private static FragmentGeneral fragmentGeneral;
 
     private DataBaseHandler dataBaseHandler = null;
     private Connection connection = null;
@@ -67,6 +72,9 @@ public class FragmentGeneral extends Fragment {
 
         getChildFragmentManager().setFragmentResultListener("requestKey", this,
                 (requestKey, result) -> {
+                    CategoryPrepare object = result.getParcelable("object");
+                    categories_income_prepare.add(object);
+
                     String color = result.getString("color");
                     String name = result.getString("name");
                     int id_icon = result.getInt("icon");
@@ -104,8 +112,9 @@ public class FragmentGeneral extends Fragment {
                 });
     }
 
-    public FragmentGeneral(FrameLayout sub_fragment) {
-        this.sub_fragment = sub_fragment;
+    public FragmentGeneral(Context context, FragmentManager fragmentManager) {
+        this.fragmentManager = fragmentManager;
+        this.context = context;
     }
 
     @Override
@@ -113,15 +122,33 @@ public class FragmentGeneral extends Fragment {
         View view = inflater.inflate(R.layout.fragment_general, container, false);
         init(view);
 
-        category_income_list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int pos, long l) {
-                sub_fragment.setBackgroundColor(getResources().getColor(R.color.black, getActivity().getTheme()));
-                IncomeFragment incomeFragment = new IncomeFragment();
-                FragmentTransaction fragmentTransaction1 = getActivity().getSupportFragmentManager().
-                        beginTransaction().replace(R.id.sub_fragment, incomeFragment);
-                fragmentTransaction1.commit();
+        category_income_list.setOnItemClickListener((adapterView, view1, pos, l) -> {
+            Bundle bundle = new Bundle();
+
+            if (categories_income_prepare != null) {
+                CategoryPrepare object = categories_income_prepare.get(pos);
+
+                String color = object.getBg_color_category();
+                String name = object.getName_category();
+                int id_icon = object.getIcon_category();
+
+                bundle.putString("color_sub", color);
+                bundle.putString("name_sub", name);
+                bundle.putInt("id_icon_sub", id_icon);
             }
+
+            FragmentSubCategory fragmentSubCategory = new FragmentSubCategory(icons);
+            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().
+                    replace(R.id.sub_fragment, fragmentSubCategory);
+            fragmentTransaction.commit();
+
+            fragmentSubCategory.setArguments(bundle);
+
+
+            getActivity().findViewById(R.id.piechart_layout).setVisibility(View.GONE);
+            getActivity().findViewById(R.id.main_fragment).setVisibility(View.GONE);
+            getActivity().findViewById(R.id.total_sum).setVisibility(View.GONE);
+            getActivity().findViewById(R.id.shadow_layout).setVisibility(View.GONE);
         });
 
         incomes_add_btn.setOnClickListener(v -> {
@@ -133,6 +160,7 @@ public class FragmentGeneral extends Fragment {
     }
 
     private void init(View view) {
+        fragmentGeneral = new FragmentGeneral(getContext(), getParentFragmentManager());
         dataBaseHandler = DataBaseHandler.getDataBaseHadler();
 
         icons.add(getResources().getDrawable(R.drawable.ic_bag, getContext().getTheme()));
@@ -156,11 +184,9 @@ public class FragmentGeneral extends Fragment {
         if (bundle != null) {
             categories_income_prepare = (ArrayList<CategoryPrepare>) bundle.getSerializable("categories_income");
             categories_expense_prepare = (ArrayList<CategoryPrepare>) bundle.getSerializable("categories_expense");
-            Log.d("MyLog", "4");
         }
 
         if (categories_income_prepare != null) {
-                Log.d("MyLog", "5");
             if (!categories_income_prepare.isEmpty()) {
                 categories_income_adapter = setCategoryData(categories_income_prepare, categories_income, categories_income_adapter, category_income_list);
 
@@ -195,7 +221,7 @@ public class FragmentGeneral extends Fragment {
      * @param adapter адаптер списка
      * @param listView отображаемый список категорий
      */
-    private CategoryAdapter setCategoryData(ArrayList<CategoryPrepare> prepare_categories, ArrayList<Category>
+    public CategoryAdapter setCategoryData(ArrayList<CategoryPrepare> prepare_categories, ArrayList<Category>
             categories, CategoryAdapter adapter, ListView listView) {
         for (int i = 0; i < prepare_categories.size(); i++) {
             Drawable item = AppCompatResources.getDrawable(getActivity().getBaseContext(), R.drawable.shape_item_bg);
@@ -209,7 +235,6 @@ public class FragmentGeneral extends Fragment {
 
             adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories);
             listView.setAdapter(adapter);
-
         }
         return adapter;
     }
@@ -265,4 +290,7 @@ public class FragmentGeneral extends Fragment {
         categories_income_adapter.notifyDataSetChanged();
     }
 
+    public static void setFragmentGeneral(FragmentGeneral fragmentGeneral) {
+        FragmentGeneral.fragmentGeneral = fragmentGeneral;
+    }
 }
