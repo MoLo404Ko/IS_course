@@ -1,13 +1,16 @@
 package app.course.sub_category;
 
+import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
@@ -32,6 +35,7 @@ import app.course.authorization.DataBaseHandler;
 
 public class DialogAddSubCategory extends DialogFragment {
     private ImageButton btn_close_dialog_add_sub_category;
+    private ImageView sub_category_date_btn;
     private Button add_sub_category_btn;
     private EditText name_add_sub_category_edit;
     private EditText sum_edit_text_add_dialog;
@@ -134,6 +138,15 @@ public class DialogAddSubCategory extends DialogFragment {
             }
         });
 
+        sub_category_date_btn.setOnClickListener(v -> {
+            DatePickerDialog datePickerDialog = new DatePickerDialog(getContext());
+            datePickerDialog.setOnDateSetListener((datePicker, i, i1, i2) -> {
+                date_edit_text_add_dialog.setText(String.valueOf(i2) + "-" + String.valueOf(i1 + 1) + "-" + String.valueOf(i));
+            });
+
+            datePickerDialog.show();
+        });
+
         return view;
     }
 
@@ -143,6 +156,7 @@ public class DialogAddSubCategory extends DialogFragment {
         current_sum = (int)bundle.get("current_sum");
 
         btn_close_dialog_add_sub_category = view.findViewById(R.id.btn_close_dialog_add_sub_category);
+        sub_category_date_btn = view.findViewById(R.id.sub_category_date_btn);
         add_sub_category_btn = view.findViewById(R.id.add_sub_category_btn);
 
         name_add_sub_category_edit = view.findViewById(R.id.name_add_sub_category_edit);

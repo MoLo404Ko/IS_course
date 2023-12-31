@@ -6,11 +6,11 @@
 
     <ImageButton
         android:id="@+id/btn_close_dialog_add_sub_category"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
 
         android:layout_marginTop="17dp"
-        android:layout_marginRight="20dp"
+        android:layout_marginRight="10dp"
 
         android:background="@drawable/ic_cross"
 
@@ -26,7 +26,7 @@
         android:layout_height="wrap_content"
 
         android:layout_marginTop="15dp"
-        android:layout_marginLeft="20dp"
+        android:layout_marginLeft="10dp"
         android:text="@string/name_sub_category"
 
         app:layout_constraintTop_toBottomOf="@id/btn_close_dialog_add_sub_category"
@@ -35,7 +35,7 @@
 
     <EditText
         android:id="@+id/name_add_sub_category_edit"
-        android:layout_width="248dp"
+        android:layout_width="268dp"
         android:layout_height="40dp"
         android:background="@drawable/shape_edit_text_add_dialog"
 
@@ -56,7 +56,7 @@
 
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/sum_and_date_layout_add_dialog"
-        android:layout_width="246dp"
+        android:layout_width="266dp"
         android:layout_height="wrap_content"
         android:weightSum="2"
 
@@ -88,7 +88,7 @@
 
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/sum_and_date_layout_edit_add_dialog"
-        android:layout_width="246dp"
+        android:layout_width="266dp"
         android:layout_height="wrap_content"
 
         app:layout_constraintTop_toBottomOf="@id/sum_and_date_layout_add_dialog"
@@ -97,26 +97,49 @@
 
         <EditText
             android:id="@+id/sum_edit_text_add_dialog"
-            android:layout_width="118dp"
-            android:layout_height="30dp"
+            android:layout_width="128dp"
+            android:layout_height="40dp"
 
             style="@style/edit_text_dialog_add"
             android:background="@drawable/shape_edit_text_add_dialog">
         </EditText>
 
-        <EditText
-            android:id="@+id/date_edit_text_add_dialog"
-            android:layout_width="118dp"
-            android:layout_height="30dp"
-            android:layout_marginLeft="10dp"
-            android:focusable="false"
 
-            android:drawableRight="@drawable/ic_date"
-            android:paddingRight="7dp"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginLeft="10dp">
 
-            style="@style/edit_text_dialog_add"
-            android:background="@drawable/shape_edit_text_add_dialog">
-        </EditText>
+                <EditText
+                    android:id="@+id/date_edit_text_add_dialog"
+                    style="@style/edit_text_dialog_add"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+
+                    android:background="@drawable/shape_edit_text_add_dialog"
+
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
+                </EditText>
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/sub_category_date_btn"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp"
+
+                    android:clickable="true"
+                    android:src="@drawable/ic_date"
+
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"
+                    android:layout_marginRight="5dp">
+
+                </androidx.appcompat.widget.AppCompatImageView>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
     </androidx.appcompat.widget.LinearLayoutCompat>
 
     <Button

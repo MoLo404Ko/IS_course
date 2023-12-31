@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -26,6 +27,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
@@ -58,6 +60,9 @@ import app.course.menu_fragments.SettingsFragment;
 public class MainActivity extends AppCompatActivity {
     private Handler handler;
     private int income_sum;
+    private int press_count = 0;
+    long start_time;
+
     private Bundle extras = null;
 
     private ConstraintLayout main_layout;
@@ -108,6 +113,32 @@ public class MainActivity extends AppCompatActivity {
         return false;
     };
 
+    /**
+     * Обработка нажатия на системную клавишу back
+     * @param keyCode
+     * @param event
+     * @return true
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        press_count++;
+
+        if (keyCode == KeyEvent.KEYCODE_BACK && press_count == 1) {
+            Toast.makeText(this, "Нажмите еще раз для выхода", Toast.LENGTH_SHORT).show();
+            start_time = System.currentTimeMillis();
+            press_count++;
+        }
+
+        if (System.currentTimeMillis() - start_time <= 2000 && press_count == 3) finish();
+        else if (System.currentTimeMillis() - start_time > 2000 && press_count == 3) {
+            Toast.makeText(this, "Нажмите еще раз для выхода", Toast.LENGTH_SHORT).show();
+            start_time = System.currentTimeMillis();
+            press_count = 2;
+        }
+
+        return true;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -132,6 +163,8 @@ public class MainActivity extends AppCompatActivity {
 
             dialog.show();
         });
+
+
     }
 
     public void init() throws SQLException {
@@ -312,5 +345,18 @@ public class MainActivity extends AppCompatActivity {
 
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
+    }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            if (conn != null) db.closeConnect(conn);
+            if (st != null) st.close();
+            if (rs != null) rs.close();
+        }
+        catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        super.onDestroy();
     }
 }

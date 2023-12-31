@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Patterns;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AnimationSet;
@@ -50,6 +51,8 @@ public class Registration extends AppCompatActivity {
     private Handler handler = null;
     private boolean isExist = true;
     private String phone_regex = "\\d{11}";
+    private int press_count = 0;
+    long start_time;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -231,6 +234,36 @@ public class Registration extends AppCompatActivity {
         }
     }
 
+    /**
+     * Обработка нажатия на системную клавишу back
+     * @param keyCode
+     * @param event
+     * @return true
+     */
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        press_count++;
+
+        if (keyCode == KeyEvent.KEYCODE_BACK && press_count == 1) {
+            Toast.makeText(this, "Нажмите еще раз для выхода", Toast.LENGTH_SHORT).show();
+            start_time = System.currentTimeMillis();
+            press_count++;
+        }
+
+        if (System.currentTimeMillis() - start_time <= 2000 && press_count == 3) finish();
+        else if (System.currentTimeMillis() - start_time > 2000 && press_count == 3) {
+            Toast.makeText(this, "Нажмите еще раз для выхода", Toast.LENGTH_SHORT).show();
+            start_time = System.currentTimeMillis();
+            press_count = 2;
+        }
+
+        return true;
+    }
+
+    /**
+     * Метод проигрывания анимации при вводе данных в поля
+     * @param view
+     */
     private void moveAnim(View view) {
         AnimationSet animationSet = new AnimationSet(true);
         animationSet.setInterpolator(new AccelerateDecelerateInterpolator());
