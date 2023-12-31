@@ -26,6 +26,11 @@ public class CategoryAdapter extends ArrayAdapter<Category> {
         this.categories = categories;
     }
 
+    public void remove(int position) {
+        categories.remove(position);
+        notifyDataSetChanged();
+    }
+
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View view = inflater.inflate(this.layout, parent, false);

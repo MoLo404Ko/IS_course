@@ -1,24 +1,34 @@
 package app.course.Main;
 
+import static android.widget.Toast.LENGTH_SHORT;
+
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.FrameLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+
+import com.hudomju.swipe.SwipeToDismissTouchListener;
+import com.hudomju.swipe.adapter.ListViewAdapter;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -26,11 +36,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import app.course.DialogAddIncomeCategory;
 import app.course.Queries;
 import app.course.R;
 import app.course.User;
+import app.course.authorization.Authorization;
 import app.course.authorization.DataBaseHandler;
 import app.course.category.Category;
 import app.course.category.CategoryPrepare;
@@ -41,6 +57,7 @@ public class FragmentGeneral extends Fragment {
     private ArrayList<CategoryPrepare> categories_expense_prepare;
     private ArrayList<Category> categories_income;
     private ArrayList<Category> categories_expense;
+    private ArrayList<Integer> id_categories;
 
     private CategoryAdapter categories_income_adapter;
     private CategoryAdapter categories_expense_adapter;
@@ -58,6 +75,8 @@ public class FragmentGeneral extends Fragment {
     private FragmentManager fragmentManager;
     private ArrayList<Drawable> icons = new ArrayList<>();
     private Context context;
+    private Handler handler;
+    private Bundle bundle;
 
     private static FragmentGeneral fragmentGeneral;
 
@@ -70,11 +89,29 @@ public class FragmentGeneral extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getParentFragmentManager().setFragmentResultListener("fragmentSubKey", this,
+                (requestKey, result) -> {
+                    int new_sum = result.getInt("new_sum");
+                    int pos = result.getInt("pos");
+                    int different;
+                    int current_sum = ((Category)category_income_list.getItemAtPosition(pos)).getSum_category();
+
+                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ПЕРЕДЕЛАТЬ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                    // categories_income - список внутри ListView, а отображаемые данные в prepare
+                    // из за того что не получилось нормально парсить иконки
+
+                    different = new_sum - current_sum;
+
+                    ((Category)category_income_list.getItemAtPosition(pos)).setSum_category(new_sum);
+                    categories_income_prepare.get(pos).setSum_category(new_sum);
+                    categories_income_adapter.notifyDataSetChanged();
+
+                    income_sum += different;
+                    incomes_text.setText(String.valueOf(income_sum));
+                });
+
         getChildFragmentManager().setFragmentResultListener("requestKey", this,
                 (requestKey, result) -> {
-                    CategoryPrepare object = result.getParcelable("object");
-                    categories_income_prepare.add(object);
-
                     String color = result.getString("color");
                     String name = result.getString("name");
                     int id_icon = result.getInt("icon");
@@ -83,32 +120,20 @@ public class FragmentGeneral extends Fragment {
                     bg.setTint(Color.parseColor(color));
 
                     categories_income.add(new Category(bg, icons.get(id_icon), 0, "0", name));
+                    categories_income_prepare.add(new CategoryPrepare(color, id_icon, 0, "0", name));
 
-                    if (categories_income_adapter == null) {
-                        categories_income_adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories_income);
-                        category_income_list.setAdapter(categories_income_adapter);
-                    }
+                    categories_income_adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories_income);
+                    category_income_list.setAdapter(categories_income_adapter);
 
                     setHeightListView(category_income_list);
                     categories_income_adapter.notifyDataSetChanged();
 
-                    new Thread(() -> {
-                        try {
-                            connection = dataBaseHandler.connect(connection);
-                            preparedStatement = connection.prepareStatement(Queries.addNewIncomeCategory());
-                            preparedStatement.setInt(1, User.getUser().getID_user());
-                            preparedStatement.setInt(2, 0);
-                            preparedStatement.setString(3, name);
-
-                            preparedStatement.setInt(4, id_icon);
-                            preparedStatement.setString(5, color);
-                            preparedStatement.executeUpdate();
-                        }
-                        catch (SQLException | ClassNotFoundException e) {
-                            Log.d("MyLog", e.getMessage());
-                            e.printStackTrace();
-                        }
-                    }).start();
+                    try {
+                        id_categories.add(updateIdCategories(color, name, id_icon));
+                    } catch (ExecutionException | InterruptedException e) {
+                        Log.d("MyLog", e.getMessage());
+                        e.printStackTrace();
+                    }
                 });
     }
 
@@ -124,42 +149,61 @@ public class FragmentGeneral extends Fragment {
 
         category_income_list.setOnItemClickListener((adapterView, view1, pos, l) -> {
             Bundle bundle = new Bundle();
-
             if (categories_income_prepare != null) {
                 CategoryPrepare object = categories_income_prepare.get(pos);
 
                 String color = object.getBg_color_category();
                 String name = object.getName_category();
                 int id_icon = object.getIcon_category();
+                int id_category = id_categories.get(pos);
+                int sum = object.getSum_category();
 
                 bundle.putString("color_sub", color);
                 bundle.putString("name_sub", name);
                 bundle.putInt("id_icon_sub", id_icon);
+                bundle.putInt("id_category", id_category);
+                bundle.putInt("sum_sub", sum);
             }
 
-            FragmentSubCategory fragmentSubCategory = new FragmentSubCategory(icons);
+            FragmentSubCategory fragmentSubCategory = new FragmentSubCategory(icons, pos);
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().
                     replace(R.id.sub_fragment, fragmentSubCategory);
             fragmentTransaction.commit();
 
-            fragmentSubCategory.setArguments(bundle);
-
-
-            getActivity().findViewById(R.id.piechart_layout).setVisibility(View.GONE);
             getActivity().findViewById(R.id.main_fragment).setVisibility(View.GONE);
-            getActivity().findViewById(R.id.total_sum).setVisibility(View.GONE);
             getActivity().findViewById(R.id.shadow_layout).setVisibility(View.GONE);
+
+            fragmentSubCategory.setArguments(bundle);
         });
 
         incomes_add_btn.setOnClickListener(v -> {
+            ArrayList<String> names = new ArrayList<>();
+
+            if (categories_income_prepare != null) {
+                for (int i = 0; i < categories_income_prepare.size(); i++) {
+                    names.add(categories_income_prepare.get(i).getName_category());
+                }
+            }
+
+            bundle.putStringArrayList("income_category_names", names);
+
             DialogAddIncomeCategory dialogAddIncomeCategory = new DialogAddIncomeCategory();
             dialogAddIncomeCategory.show(getChildFragmentManager(), "tag");
+            dialogAddIncomeCategory.setArguments(bundle);
         });
+
+
+
 
         return view;
     }
 
     private void init(View view) {
+        categories_income_adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories_income);
+
+        handler = new Handler(Looper.getMainLooper());
+        id_categories = new ArrayList<>();
+
         fragmentGeneral = new FragmentGeneral(getContext(), getParentFragmentManager());
         dataBaseHandler = DataBaseHandler.getDataBaseHadler();
 
@@ -179,11 +223,13 @@ public class FragmentGeneral extends Fragment {
         incomes_text = view.findViewById(R.id.incomes_text);
         expense_text = view.findViewById(R.id.expenses_text);
 
-        Bundle bundle = this.getArguments();
+        bundle = this.getArguments();
 
         if (bundle != null) {
             categories_income_prepare = (ArrayList<CategoryPrepare>) bundle.getSerializable("categories_income");
             categories_expense_prepare = (ArrayList<CategoryPrepare>) bundle.getSerializable("categories_expense");
+
+            id_categories = bundle.getIntegerArrayList("id_categories");
         }
 
         if (categories_income_prepare != null) {
@@ -259,7 +305,6 @@ public class FragmentGeneral extends Fragment {
             totalHeight += listItem.getMeasuredHeight();
         }
 
-
         ViewGroup.LayoutParams params = listView.getLayoutParams();
         params.height = totalHeight + (listView.getDividerHeight() * (listAdapter.getCount() - 1));
         listView.setLayoutParams(params);
@@ -290,7 +335,79 @@ public class FragmentGeneral extends Fragment {
         categories_income_adapter.notifyDataSetChanged();
     }
 
-    public static void setFragmentGeneral(FragmentGeneral fragmentGeneral) {
-        FragmentGeneral.fragmentGeneral = fragmentGeneral;
+    /**
+     * Метод обновления данных id категорий после добавления
+     * @return id категории
+     */
+    private int updateIdCategories(String color, String name, int id_icon)
+            throws ExecutionException, InterruptedException {
+        ExecutorService es = Executors.newSingleThreadExecutor();
+        Future<Integer> future = es.submit(new UpdateIdCategoriesTask(color, name, id_icon));
+
+        es.shutdown();
+
+        return future.get();
+    }
+
+    /**
+     * Задача для возвращения добавленного id в БД
+     */
+    private static class UpdateIdCategoriesTask implements Callable<Integer> {
+        private DataBaseHandler dataBaseHandler = DataBaseHandler.getDataBaseHadler();
+        private Connection connection = null;
+        private PreparedStatement preparedStatement = null;
+        private ResultSet resultSet = null;
+
+        private String color;
+        private String name;
+        private int id_icon;
+        private int id_category;
+
+        public UpdateIdCategoriesTask(String color, String name, int id_icon) {
+            this.color = color;
+            this.name = name;
+            this.id_icon = id_icon;
+        }
+        @Override
+        public Integer call() {
+            try {
+                connection = dataBaseHandler.connect(connection);
+                preparedStatement = connection.prepareStatement(Queries.addNewIncomeCategory());
+                preparedStatement.setInt(1, User.getUser().getID_user());
+                preparedStatement.setInt(2, 0);
+                preparedStatement.setString(3, name);
+
+                preparedStatement.setInt(4, id_icon);
+                preparedStatement.setString(5, color);
+                preparedStatement.executeUpdate();
+
+                preparedStatement = connection.prepareStatement(Queries.getCategoryIncome());
+                preparedStatement.setInt(1, User.getUser().getID_user());
+                resultSet = preparedStatement.executeQuery();
+
+                while (resultSet.next()) {
+                    id_category = resultSet.getInt(5);
+                }
+
+            }
+            catch (SQLException | ClassNotFoundException e) {
+                Log.d("MyLog", e.getMessage());
+                e.printStackTrace();
+            }
+
+            finally {
+                try {
+                    if (connection != null) dataBaseHandler.closeConnect(connection);
+                    if (preparedStatement != null) preparedStatement.close();
+                    if (resultSet != null) resultSet.close();
+                }
+                catch (SQLException e) {
+                    Log.d("MyLog", e.getMessage());
+                    e.printStackTrace();
+                }
+
+            }
+            return id_category;
+        }
     }
 }

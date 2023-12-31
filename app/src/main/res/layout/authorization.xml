@@ -32,8 +32,13 @@
     <EditText
         android:id="@+id/login"
         style="@style/EditText"
+
         android:hint="@string/login"
         android:background="@drawable/shape_edit_text"
+
+        android:maxLines="1"
+        android:inputType="text"
+
         android:layout_marginTop="40dp"
         android:drawableRight="@drawable/ic_user"
         android:paddingRight="15dp"
@@ -45,8 +50,12 @@
     <EditText
         android:id="@+id/password"
         style="@style/EditText"
+
         android:hint="@string/password"
         android:background="@drawable/shape_edit_text"
+
+        android:maxLines="1"
+
         android:layout_marginTop="15dp"
         android:drawableRight="@drawable/ic_lock"
         android:paddingRight="15dp"

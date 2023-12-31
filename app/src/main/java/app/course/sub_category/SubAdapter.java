@@ -25,7 +25,7 @@ public class SubAdapter extends ArrayAdapter<SubCategory> {
     private List<SubCategory> categories;
 
     public SubAdapter(Context context, int resource, List<SubCategory> categoryList) {
-        super(context, resource);
+        super(context, resource, categoryList);
         this.inflater = LayoutInflater.from(context);
         this.layout = resource;
         this.categories = categoryList;
@@ -46,6 +46,7 @@ public class SubAdapter extends ArrayAdapter<SubCategory> {
         category_name.setText(category.getName());
         category_sum.setText(category.getSum());
         category_date.setText(category.getDate_last_entry());
+
         return view;
     }
 }

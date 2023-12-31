@@ -39,6 +39,7 @@ public class DialogAddIncomeCategory extends DialogFragment {
     private ImageButton no_color;
     private ImageButton btn_close_dialog_add_category;
     private ArrayList<String> colors;
+    private ArrayList<String> names;
 
     private boolean isNamed = false;
     private boolean hasIcon = false;
@@ -48,6 +49,7 @@ public class DialogAddIncomeCategory extends DialogFragment {
 
     private int id_icon;
     private Bundle result = new Bundle();
+    private Bundle bundle = new Bundle();
 
 
 
@@ -63,7 +65,24 @@ public class DialogAddIncomeCategory extends DialogFragment {
         add_category.setOnClickListener(v -> {
             getName();
             hasColor = dialogAddIncomeCategory.isHasColor();
-            if (hasIcon && isNamed && hasColor) addCategory();
+            if (hasIcon && isNamed && hasColor) {
+                if (names != null) {
+                    if (!names.contains(name_add_category_income_edit.getText().toString())) {
+                        names.add(name_add_category_income_edit.getText().toString());
+                        addCategory();
+                    }
+
+                    else {
+                        Toast.makeText(getContext(), "Такая категория уже существует!", Toast.LENGTH_SHORT).show();
+                        Authorization.moveAnim(name_add_category_income_edit);
+                    }
+                }
+
+                else {
+                    addCategory();
+                }
+
+            }
             else Toast.makeText(getContext(), "Не все выбрано!", Toast.LENGTH_SHORT).show();
         });
 
@@ -74,6 +93,9 @@ public class DialogAddIncomeCategory extends DialogFragment {
     }
 
     private void init(View view) {
+        bundle = this.getArguments();
+        names = bundle.getStringArrayList("income_category_names");
+
         btn_close_dialog_add_category = view.findViewById(R.id.btn_close_dialog_add_category);
         color_layout = view.findViewById(R.id.colors_add_category_income);
 
@@ -116,11 +138,6 @@ public class DialogAddIncomeCategory extends DialogFragment {
         result.putString("color", color);
         result.putInt("icon", id_icon);
         result.putString("name", name_add_category_income_edit.getText().toString());
-
-        CategoryPrepare object = new CategoryPrepare(color,id_icon, 0,"0",
-                name_add_category_income_edit.getText().toString());
-
-        result.putParcelable("object", object);
 
         getParentFragmentManager().setFragmentResult("requestKey", result);
     }

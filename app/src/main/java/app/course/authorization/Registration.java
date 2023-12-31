@@ -1,5 +1,6 @@
 package app.course.authorization;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -62,6 +63,8 @@ public class Registration extends AppCompatActivity {
         }
 
         back_btn.setOnClickListener(view -> {
+            Intent intent = new Intent(this, Authorization.class);
+            startActivity(intent);
             finish();
         });
 
@@ -131,6 +134,8 @@ public class Registration extends AppCompatActivity {
                                 else {
                                     errorField("repeat_password_field", true, repeat_password_field);
 
+                                    Intent intent = new Intent(this, Authorization.class);
+
                                     new Thread(() -> {
                                         try {
                                             if (!isExist) {
@@ -142,14 +147,17 @@ public class Registration extends AppCompatActivity {
                                                 statement.setString(2, login_field.getText().toString());
                                                 statement.setString(3, password);
                                                 statement.executeUpdate();
-
-                                                finish();
                                             }
                                         } catch (SQLException | NoSuchAlgorithmException
                                                  | InvalidKeySpecException e) {
                                             throw new RuntimeException(e);
                                         }
                                     }).start();
+
+                                    if (!isExist) {
+                                        startActivity(intent);
+                                        finish();
+                                    }
                                 }
                             } catch (SQLException e) {
                                 throw new RuntimeException(e);

@@ -9,6 +9,7 @@ import androidx.fragment.app.FragmentTransaction;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.graphics.Color;
+import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -55,11 +56,9 @@ import app.course.menu_fragments.SettingsFragment;
 
 
 public class MainActivity extends AppCompatActivity {
-//    private TextView general_sum;
+    private Handler handler;
     private int income_sum;
-//    private int expense_sum;
     private Bundle extras = null;
-    private Bundle args = null;
 
     private ConstraintLayout main_layout;
     private ScrollView main_fragment;
@@ -68,17 +67,15 @@ public class MainActivity extends AppCompatActivity {
     private RelativeLayout pieChart_layout;
     private FrameLayout sub_fragment;
 
-    RelativeLayout all_time, one_day, week, month, range, year;
+    private RelativeLayout all_time, one_day, week, month, range, year;
 
     private FragmentTransaction fragmentTransaction = null;
     private FragmentGeneral fragmentGeneral = null;
     private Button datePicker;
     private ImageButton add_button, minus_button, history_button;
     private Spinner dropDown;
-    private Calendar calendar;
 
     private BottomNavigationView bottomNavigationView;
-    private ExecutorService executorService = null;
 
     private User user = User.getUser();
     private DataBaseHandler db = DataBaseHandler.getDataBaseHadler();
@@ -88,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ArrayList<CategoryPrepare> categories_income;
     private ArrayList<CategoryPrepare> categories_expense;
+    private ArrayList<Integer> id_categories = new ArrayList<>();
     private NavigationBarView.OnItemSelectedListener listener_nav = item -> {
         switch (item.getItemId()) {
             case R.id.home_menu:
@@ -137,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void init() throws SQLException {
+        handler = new Handler(Looper.getMainLooper());
         add_button = findViewById(R.id.add_btn);
 
         sub_fragment = findViewById(R.id.sub_fragment);
@@ -154,14 +153,12 @@ public class MainActivity extends AppCompatActivity {
 
         setHeightFragment(main_fragment, shadow_layout);
 
-        calendar = Calendar.getInstance();
         datePicker = findViewById(R.id.date_picker);
 
 
         bottomNavigationView = findViewById(R.id.bottomNav);
         bottomNavigationView.setOnItemSelectedListener(listener_nav);
 
-        executorService = Executors.newSingleThreadExecutor();
 
         setDropDown();
 
@@ -169,11 +166,13 @@ public class MainActivity extends AppCompatActivity {
 
         categories_income = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_income");
         categories_expense = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_expense");
+        id_categories = getIntent().getIntegerArrayListExtra("id_categories");
 
         Bundle args = new Bundle();
 
         args.putSerializable("categories_income", categories_income);
         args.putSerializable("categories_expense", categories_expense);
+        args.putIntegerArrayList("id_categories", id_categories);
         fragmentGeneral.setArguments(args);
 
         fragmentTransaction = getSupportFragmentManager().beginTransaction();
@@ -202,7 +201,6 @@ public class MainActivity extends AppCompatActivity {
     // ---------------------------------------------------------------------------------------------
 
     private void setDatePicker(View view) {
-        Handler handler = new Handler(Looper.getMainLooper());
         ArrayList<Integer> list_incomes = new ArrayList<>();
 
         switch (view.getId()) {
@@ -300,5 +298,19 @@ public class MainActivity extends AppCompatActivity {
         pieChart.setInnerPadding(65f);
         pieChart.addPieSlice(new PieModel("", 100,
                 getResources().getColor(R.color.blue_general, getTheme())));
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        setHeightSubFragment();
+    }
+
+    private void setHeightSubFragment() {
+        int[] location = new int[2];
+        dropDown.getLocationOnScreen(location);
+
+        DisplayMetrics metrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(metrics);
     }
 }

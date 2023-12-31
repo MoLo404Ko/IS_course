@@ -58,6 +58,7 @@ public class Authorization extends AppCompatActivity {
     private ArrayList<CategoryPrepare> categories_income;
     private ArrayList<CategoryPrepare> categories_expense;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,6 +82,7 @@ public class Authorization extends AppCompatActivity {
         reg_btn_tv.setOnClickListener(view -> {
             Intent intent = new Intent(this, Registration.class);
             startActivity(intent);
+            finish();
         });
 
         btn_entry.setOnClickListener(view ->{
@@ -134,6 +136,7 @@ public class Authorization extends AppCompatActivity {
                                              * Перевод пароля в ХЭШ и проверка на наличие такого же ХЭШ в БД
                                              */
                                             try {
+                                                ArrayList<Integer> id_categories = new ArrayList<>();
                                                 HashPassword hp = new HashPassword();
                                                 boolean isCorrect = hp.validatePassword(password_field.getText().toString(), password);
 
@@ -143,47 +146,26 @@ public class Authorization extends AppCompatActivity {
 
                                                         try {
                                                             amounts = getDropDown();
-
-                                                            new Thread(() -> {
-                                                                try {
-                                                                    int count = 0;
-                                                                    statement = conn.prepareStatement(Queries.countCategories("category_income"));
-                                                                    statement.setInt(1, User.getUser().getID_user());
-                                                                    rs = statement.executeQuery();
-
-                                                                    while (rs.next()) count = rs.getInt(1);
-
-                                                                    if (count != 0) {
-                                                                        categories_income = getCategoriesIncome();
-                                                                    }
-
-                                                                    statement = conn.prepareStatement(Queries.countCategories("category_expense"));
-                                                                    statement.setInt(1, User.getUser().getID_user());
-                                                                    rs = statement.executeQuery();
-
-                                                                    while (rs.next()) count = rs.getInt(1);
-
-                                                                    if (count != 0) {
-                                                                        categories_expense = getCategoriesExpense();
-                                                                    }
+                                                            categories_income = getCategoriesIncome();
 
 
+//                                                            categories_expense = getCategoriesExpense();
 
-                                                                }
-                                                                catch (SQLException | ExecutionException | InterruptedException e) {
-                                                                    throw new RuntimeException(e);
-                                                                }
-
-                                                            }).start();
                                                         } catch (ExecutionException | InterruptedException e) {
                                                             Log.d("MyLog", e.getMessage());
                                                             e.printStackTrace();
+                                                        }
+
+                                                        for (CategoryPrepare categoryPrepare: categories_income) {
+                                                            id_categories.add(categoryPrepare.getId_category());
                                                         }
 
                                                         Intent intent = new Intent(Authorization.this, MainActivity.class);
                                                         intent.putExtra("amounts", amounts);
                                                         intent.putExtra("categories_income", categories_income);
                                                         intent.putExtra("categories_expense", categories_expense);
+                                                        intent.putExtra("id_categories", id_categories);
+
 
                                                         startActivity(intent);
                                                     }
@@ -224,51 +206,6 @@ public class Authorization extends AppCompatActivity {
             finish();
         });
     }
-
-    /**
-     * Метод получения данных из базы
-     * 1. getDropDown возвращает счета пользователя
-     * 2. Выполняется запрос количества категорий для проверки их наличия
-     * 3. Если проверка прошла, происходит загрузка категорий
-     */
-//    private void loadDataFromDB() {
-//        try {
-//            amounts = getDropDown();
-//
-//            new Thread(() -> {
-//                try {
-//                    int count = 0;
-//                    statement = conn.prepareStatement(Queries.countCategories("category_income"));
-//                    statement.setInt(1, User.getUser().getID_user());
-//                    rs = statement.executeQuery();
-//
-//                    while (rs.next()) count = rs.getInt(1);
-//
-//                    if (count != 0) {
-//                        categories_income = getCategoriesIncome();
-//                    }
-//
-//                    statement = conn.prepareStatement(Queries.countCategories("category_expense"));
-//                    statement.setInt(1, User.getUser().getID_user());
-//                    rs = statement.executeQuery();
-//
-//                    while (rs.next()) count = rs.getInt(1);
-//
-//                    if (count != 0) {
-//                        categories_expense = getCategoriesExpense();
-//                    }
-//
-//                }
-//                catch (SQLException | ExecutionException | InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
-//
-//            }).start();
-//        } catch (ExecutionException | InterruptedException e) {
-//            Log.d("MyLog", e.getMessage());
-//            e.printStackTrace();
-//        }
-//    }
 
     private void init() {
         amounts = new ArrayList<>();
@@ -391,12 +328,12 @@ public class Authorization extends AppCompatActivity {
             if (!isFill) {
                 amounts.add("Основной счет");
 
-                statement = connection.prepareStatement(Queries.setDefaultAmounts());
-                statement.setInt(1, User.getUser().getID_user());
-                statement.setString(2, "Основной счет");
-                statement.setDouble(3, 0);
-                statement.setInt(4,1);
-                statement.executeUpdate();
+//                statement = connection.prepareStatement(Queries.setDefaultAmounts());
+//                statement.setInt(1, User.getUser().getID_user());
+//                statement.setString(2, "Основной счет");
+//                statement.setDouble(3, 0);
+//                statement.setInt(4,1);
+//                statement.executeUpdate();
             }
 
             statement.close();
@@ -450,6 +387,7 @@ public class Authorization extends AppCompatActivity {
         private ArrayList<String> items = new ArrayList<>();
         private ArrayList<Integer> sum = new ArrayList<>();
         private ArrayList<String> names = new ArrayList<>();
+        private ArrayList<Integer> id_categories = new ArrayList<>();
         private boolean isIncoming;
 
         public getCategoriesTask(boolean isIncoming, Connection conn) {
@@ -473,55 +411,56 @@ public class Authorization extends AppCompatActivity {
             while (rs.next()) {
                 isFill = true;
 
-                Log.d("MyLog", "error_2");
                 icons.add(rs.getInt(3));
                 items.add(rs.getString(4));
                 sum.add(rs.getInt(1));
                 names.add(rs.getString(2));
+                id_categories.add(rs.getInt(5));
             }
 
             for (int i: sum) total_sum += i;
 
             for (int i = 0; i < sum.size(); i++) {
-                Log.d("MyLog", "3");
                 if (sum.get(i) != 0) {
                     procent = ((double)sum.get(i) / total_sum) * 100.0;
                 }
                 else procent = 0.0;
 
-                categories.add(new CategoryPrepare(items.get(i), icons.get(i), sum.get(i),
-                        df.format(procent), names.get(i)));
+                CategoryPrepare categoryPrepare = new CategoryPrepare(items.get(i), icons.get(i), sum.get(i),
+                        df.format(procent), names.get(i));
+                categories.add(categoryPrepare);
+                categoryPrepare.setId_category(id_categories.get(i));
             }
 
-            if (isIncoming) {
-                if (!isFill) {
-                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_green_bg),
-                            R.drawable.ic_bag, 0, "0,0", "Зарплата"));
-                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_red_bg),
-                            R.drawable.ic_present, 0, "0,0", "Подарки"));
-                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_sea_bg),
-                            R.drawable.ic_grow, 0, "0,0", "Инвестиции"));
+//            if (isIncoming) {
+//                if (!isFill) {
+//                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_green_bg),
+//                            R.drawable.ic_bag, 0, "0,0", "Зарплата"));
+//                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_red_bg),
+//                            R.drawable.ic_present, 0, "0,0", "Подарки"));
+//                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_sea_bg),
+//                            R.drawable.ic_grow, 0, "0,0", "Инвестиции"));
+//
+//                    statement.executeUpdate(Queries.setDefaultCategoryIncome(User.getUser(),
+//                            "Зарплата", "Подарки", "Инвестиции",
+//                            R.drawable.ic_bag, R.drawable.ic_present, R.drawable.ic_grow,
+//                            "#0F992D", "#BC1A37", "#00A4AE"));
+//                }
+//            }
 
-                    statement.executeUpdate(Queries.setDefaultCategoryIncome(User.getUser(),
-                            "Зарплата", "Подарки", "Инвестиции",
-                            R.drawable.ic_bag, R.drawable.ic_present, R.drawable.ic_grow,
-                            "#0F992D", "#BC1A37", "#00A4AE"));
-                }
-            }
-
-            else {
-                if (!isFill) {
-                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_green_bg),
-                            R.drawable.ic_basket, 0, "0,0", "Обязательные"));
-                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_red_bg),
-                            R.drawable.ic_entertaiment, 0, "0,0", "Необязательные"));
-
-                    statement.executeUpdate(Queries.setDefaultCategoryExpense(User.getUser(),
-                            "Обязательные", "Необязательные",
-                            R.drawable.ic_basket, R.drawable.ic_entertaiment,
-                            "#0F992D", "#BC1A37"));
-                }
-            }
+//            else {
+//                if (!isFill) {
+//                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_green_bg),
+//                            R.drawable.ic_basket, 0, "0,0", "Обязательные"));
+//                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_red_bg),
+//                            R.drawable.ic_entertaiment, 0, "0,0", "Необязательные"));
+//
+//                    statement.executeUpdate(Queries.setDefaultCategoryExpense(User.getUser(),
+//                            "Обязательные", "Необязательные",
+//                            R.drawable.ic_basket, R.drawable.ic_entertaiment,
+//                            "#0F992D", "#BC1A37"));
+//                }
+//            }
 
             statement.close();
             rs.close();

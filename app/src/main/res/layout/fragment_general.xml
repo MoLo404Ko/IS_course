@@ -39,7 +39,7 @@
             <RelativeLayout
                 android:id="@+id/incomes_add_btn"
                 android:layout_width="wrap_content"
-                android:layout_height="60dp"
+                android:layout_height="97dp"
 
                 android:background="@drawable/bg_btn"
 
@@ -59,14 +59,16 @@
                     <ImageView
                         android:layout_width="35dp"
                         android:layout_height="35dp"
-                        android:background="@drawable/ic_add"
-                        android:layout_marginRight="10dp"></ImageView>
+                        android:layout_marginRight="10dp"
+                        android:background="@drawable/ic_add"></ImageView>
+
 
                     <TextView
                         style="@style/BoldFontBlue_14"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="center_vertical"
+
                         android:text="@string/add_category_text"></TextView>
 
                 </androidx.appcompat.widget.LinearLayoutCompat>
@@ -85,7 +87,6 @@
 
                 android:listSelector="@color/transparent"
                 android:scrollbars="none"
-
 
                 app:layout_constraintTop_toBottomOf="@id/incomes_add_btn"
                 app:layout_constraintLeft_toLeftOf="parent"

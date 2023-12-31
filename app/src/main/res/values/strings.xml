@@ -61,7 +61,7 @@
     <string name="add_colors">Цвет</string>
     <string name="add_icon">Иконка</string>
     <string name="add_category_btn">Добавить</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 
+    <string name="add_sub_category">Добавить подкатегорию</string>
+    <string name="name_sub_category">Название подкатегории</string>
 </resources>

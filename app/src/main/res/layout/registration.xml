@@ -30,6 +30,11 @@
         android:id="@+id/name"
         style="@style/EditText"
         android:hint="@string/name"
+
+        android:maxLength="20"
+        android:maxLines="1"
+        android:inputType="text"
+
         android:background="@drawable/shape_edit_text"
         android:layout_marginTop="40dp"
         android:drawableRight="@drawable/ic_user"
@@ -42,6 +47,10 @@
     <EditText
         android:id="@+id/login_reg"
         style="@style/EditText"
+
+        android:maxLines="1"
+        android:inputType="text"
+
         android:hint="@string/phone"
         android:background="@drawable/shape_edit_text"
         android:layout_marginTop="15dp"
@@ -56,6 +65,10 @@
         android:id="@+id/password"
         style="@style/EditText"
         android:hint="@string/entry_password"
+
+        android:maxLength="20"
+        android:maxLines="1"
+
         android:background="@drawable/shape_edit_text"
         android:layout_marginTop="15dp"
         android:drawableRight="@drawable/ic_lock"
@@ -70,6 +83,10 @@
         android:id="@+id/repeat_password"
         style="@style/EditText"
         android:hint="@string/repeat_password"
+
+        android:maxLength="20"
+        android:maxLines="1"
+
         android:background="@drawable/shape_edit_text"
         android:layout_marginTop="15dp"
         android:drawableRight="@drawable/ic_lock"

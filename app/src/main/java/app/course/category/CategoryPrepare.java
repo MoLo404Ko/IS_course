@@ -11,6 +11,7 @@ public class CategoryPrepare implements Parcelable {
     private int sum_category;
     private String category_procent;
     private String name_category;
+    private int id_category;
 
     public CategoryPrepare(String bg_color_category, int icon_category, int sum_category, String category_procent,
                            String name_category) {
@@ -73,5 +74,17 @@ public class CategoryPrepare implements Parcelable {
         parcel.writeInt(sum_category);
         parcel.writeString(category_procent);
         parcel.writeString(name_category);
+    }
+
+    public int getId_category() {
+        return id_category;
+    }
+
+    public void setId_category(int id_category) {
+        this.id_category = id_category;
+    }
+
+    public void setSum_category(int sum_category) {
+        this.sum_category = sum_category;
     }
 }
