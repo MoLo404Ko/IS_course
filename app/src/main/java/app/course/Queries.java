@@ -40,17 +40,38 @@ public class Queries {
     }
 
     public static String getSumForOneDay() {
-        String query = "SELECT SUM(sub_sum), category_income.ID_category FROM category_income, " +
+        String query = "SELECT category_income.ID_category, SUM(sub_sum), name_category FROM category_income, " +
                 "sub_category_income WHERE category_income.ID_user = ? AND " +
                 "category_income.ID_category = sub_category_income.ID_category AND date_last_entry = ? " +
                 "GROUP BY sub_category_income.ID_category";
         return query;
     }
+
+    public static String getSumForRange() {
+        String query = "SELECT category_income.ID_category, SUM(sub_sum), name_category FROM category_income, " +
+                "sub_category_income WHERE category_income.ID_user = ? and " +
+                "category_income.ID_category = sub_category_income.ID_category and date_last_entry " +
+                "BETWEEN ? and ? GROUP BY category_income.ID_category";
+        return query;
+    }
+
+    public static String getSumForAllTime() {
+        String query = "SELECT category_income.ID_category, SUM(sub_sum), name_category FROM category_income, " +
+                "sub_category_income WHERE category_income.ID_user = ? and " +
+                "category_income.ID_category = sub_category_income.ID_category";
+        return query;
+    }
+
+    public static String getHistoryMapIncome(String part_of_query) {
+        String query = "SELECT sub_category_income.name_sub_category, history_income.sum, sub_category_income.date_last_entry, " +
+                "ID_category, history_income.date_last_entry FROM sub_category_income, history_income " +
+                "WHERE ID_user = ? and sub_category_income.name_sub_category = history_income.name_sub_category and " +
+                "name_category IN (" + part_of_query + ") ORDER BY history_income.date_last_entry";
+        return query;
+    }
     /* -------------------------------------------------------------------------------------------*/
 
     /* --------------------------------------- FRAGMENT GENERAL ----------------------------------*/
-
-
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ОБЪЕДИНИТЬ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     public static String getCategoryIncome() {
@@ -62,6 +83,16 @@ public class Queries {
     public static String getCategoryExpense() {
         String query = "SELECT category_sum, name_category, category_icon, bg_category " +
                 "FROM category_expense where ID_user = ?";
+        return query;
+    }
+
+    public static String removeIncomeCategory() {
+        String query = "DELETE FROM category_income where id_user = ? and name_category in (?)";
+        return query;
+    }
+
+    public static String getNewCategoryId() {
+        String query = "SELECT ID_category FROM category_income WHERE ID_user = ? and name_category = ?";
         return query;
     }
     // --------------------------------------------------------------------------------------------
@@ -101,25 +132,54 @@ public class Queries {
 
     /* ---------------------------------- FRAGMENT_SUB_CATEGORY ----------------------------------*/
     public static String getSubCategories() {
-        String query = "SELECT name_sub_category, sub_sum, date_last_entry FROM category_income, sub_category_income WHERE" +
+        String query = "SELECT name_sub_category, sub_sum, date_last_entry, ID_sub_category FROM category_income, sub_category_income WHERE" +
                 " category_income.ID_category = sub_category_income.ID_category and sub_category_income.ID_category = ?";
         return query;
     }
 
-    public static String updateSumOfSubCategory() {
+    public static String updateSumOfCategory() {
         String query = "UPDATE category_income SET category_sum = ? WHERE ID_category = ?";
+        return query;
+    }
+
+    public static String removeItemFromSubCategory() {
+        String query = "DELETE FROM sub_category_income where name_sub_category = ? and id_category = ?";
         return query;
     }
     /* -------------------------------------------------------------------------------------------*/
 
     /* ---------------------------------- DIALOG_ADD_SUB_CATEGORY --------------------------------*/
-    public static String setSubCategory() {
+    public static String addSubCategory() {
         String query = "INSERT INTO sub_category_income (ID_category, name_sub_category, sub_sum, date_last_entry) " +
                 "VALUES (?,?,?,?)";
         return query;
     }
 
+    public static String addHistoryItem() {
+        String query = "INSERT INTO history_income (date_last_entry, name_sub_category ,ID_user, name_category, sum)" +
+                " VALUES (?,?,?,?, ?)";
+        return query;
+    }
+
+    public static String getNewIdCategories(String names) {
+        String query = "SELECT ID_category FROM category_income WHERE ID_user = ? and name_category IN (" +
+                names + ")";
+        return query;
+    }
+
     /* -------------------------------------------------------------------------------------------*/
 
+    /* ----------------------------------- FRAGMENT_HISTORY --------------------------------------*/
+    public static String getNameOfCategories() {
+        String query = "SELECT name_category FROM category_income where ID_user = ?";
+        return query;
+    }
 
+    public static String getSubCategoriesById(String part_of_query) {
+        String query = "SELECT name_sub_category, sub_sum, date_last_entry, category_income.ID_category " +
+                "FROM sub_category_income, category_income WHERE category_income.ID_category = sub_category_income.ID_category and " +
+                "sub_category_income.ID_category IN (" + part_of_query + ")";
+        return query;
+    }
+    /* -------------------------------------------------------------------------------------------*/
 }

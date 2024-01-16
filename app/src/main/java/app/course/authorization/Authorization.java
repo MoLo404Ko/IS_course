@@ -150,7 +150,6 @@ public class Authorization extends AppCompatActivity {
                                                             amounts = getDropDown();
                                                             categories_income = getCategoriesIncome();
 
-
 //                                                            categories_expense = getCategoriesExpense();
 
                                                         } catch (ExecutionException | InterruptedException e) {
@@ -456,7 +455,7 @@ public class Authorization extends AppCompatActivity {
                 else procent = 0.0;
 
                 CategoryPrepare categoryPrepare = new CategoryPrepare(items.get(i), icons.get(i), sum.get(i),
-                        df.format(procent), names.get(i));
+                        df.format(procent), names.get(i), id_categories.get(i));
                 categories.add(categoryPrepare);
                 categoryPrepare.setId_category(id_categories.get(i));
             }

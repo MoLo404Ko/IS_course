@@ -56,7 +56,6 @@ public class ColorAdapter extends RecyclerView.Adapter<ColorAdapter.MyViewHolder
                 public void onClick(View view) {
                     dialogAddIncomeCategory.setIndex_color(getAdapterPosition());
                     dialogAddIncomeCategory.setHasColor(true);
-                    Log.d("MyLog", String.valueOf(dialogAddIncomeCategory.getIndex_color()));
                 }
             });
         }

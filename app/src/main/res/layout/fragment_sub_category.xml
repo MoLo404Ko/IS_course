@@ -4,7 +4,7 @@
 
     android:id="@+id/fragment_sub_categories"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
 
     android:backgroundTint="@color/white"
 
@@ -141,9 +141,9 @@
         app:layout_constraintTop_toTopOf="parent">
     </ImageButton>
 
-    <ListView
-        android:id="@+id/sub_category_listview"
-        android:layout_width="match_parent"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/sub_category_recycler"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
 
         android:layout_marginTop="10dp"
@@ -153,11 +153,10 @@
         android:clickable="true"
 
         android:listSelector="@color/transparent"
-        android:scrollbars="none"
+        android:scrollbars="vertical"
 
         app:layout_constraintTop_toBottomOf="@id/sub_add_btn"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent">
-    </ListView>
-
+    </androidx.recyclerview.widget.RecyclerView>
 </androidx.constraintlayout.widget.ConstraintLayout>

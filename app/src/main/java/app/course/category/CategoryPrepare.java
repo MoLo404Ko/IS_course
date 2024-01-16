@@ -14,12 +14,13 @@ public class CategoryPrepare implements Parcelable {
     private int id_category;
 
     public CategoryPrepare(String bg_color_category, int icon_category, int sum_category, String category_procent,
-                           String name_category) {
+                           String name_category, int id_category) {
         this.bg_color_category = bg_color_category;
         this.icon_category = icon_category;
         this.sum_category = sum_category;
         this.category_procent = category_procent;
         this.name_category = name_category;
+        this.id_category = id_category;
     }
 
     protected CategoryPrepare(Parcel in) {
@@ -28,6 +29,7 @@ public class CategoryPrepare implements Parcelable {
         sum_category = in.readInt();
         category_procent = in.readString();
         name_category = in.readString();
+        id_category = in.readInt();
     }
 
     public static final Creator<CategoryPrepare> CREATOR = new Creator<CategoryPrepare>() {
@@ -74,6 +76,12 @@ public class CategoryPrepare implements Parcelable {
         parcel.writeInt(sum_category);
         parcel.writeString(category_procent);
         parcel.writeString(name_category);
+        parcel.writeInt(id_category);
+    }
+
+
+    public void setSum_category(int sum_category) {
+        this.sum_category = sum_category;
     }
 
     public int getId_category() {
@@ -84,7 +92,7 @@ public class CategoryPrepare implements Parcelable {
         this.id_category = id_category;
     }
 
-    public void setSum_category(int sum_category) {
-        this.sum_category = sum_category;
+    public void setCategory_procent(String category_procent) {
+        this.category_procent = category_procent;
     }
 }

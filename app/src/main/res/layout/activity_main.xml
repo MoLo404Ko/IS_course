@@ -9,6 +9,17 @@
     tools:context=".Main.MainActivity"
     android:background="@color/transparent">
 
+    <FrameLayout
+        android:id="@+id/fragment_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
+    </FrameLayout>
+
     <Spinner
         android:id="@+id/amounts_drop_down"
         android:layout_width="wrap_content"
@@ -23,7 +34,7 @@
 
     <LinearLayout
         android:id="@+id/date_picker_shadow"
-        android:layout_width="190dp"
+        android:layout_width="242dp"
         android:layout_height="40dp"
 
         android:layout_marginTop="8dp"
@@ -37,13 +48,12 @@
 
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/date_picker"
-        android:layout_width="186dp"
+        android:layout_width="262dp"
         android:layout_height="35dp"
 
         android:layout_marginTop="10dp"
         android:background="@drawable/shape_date_picker_btn"
 
-        android:text="@string/choose_date"
         android:textAllCaps="false"
 
         app:layout_constraintTop_toBottomOf="@id/amounts_drop_down"
@@ -157,7 +167,7 @@
         app:layout_constraintBottom_toBottomOf="@id/piechart_layout"
         app:layout_constraintLeft_toLeftOf="@id/piechart_layout"
         app:layout_constraintRight_toRightOf="@id/piechart_layout"
-        android:text="99999999$"></TextView>
+        android:text=""></TextView>
 
     <FrameLayout
         android:id="@+id/sub_fragment"

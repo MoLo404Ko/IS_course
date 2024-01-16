@@ -1,7 +1,5 @@
 package app.course.Main;
 
-import static android.widget.Toast.LENGTH_SHORT;
-
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -12,30 +10,30 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
-import android.widget.AdapterView;
-import android.widget.FrameLayout;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.content.res.AppCompatResources;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.hudomju.swipe.SwipeToDismissTouchListener;
-import com.hudomju.swipe.adapter.ListViewAdapter;
+import com.google.android.material.snackbar.Snackbar;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -46,23 +44,25 @@ import app.course.DialogAddIncomeCategory;
 import app.course.Queries;
 import app.course.R;
 import app.course.User;
-import app.course.authorization.Authorization;
 import app.course.authorization.DataBaseHandler;
 import app.course.category.Category;
 import app.course.category.CategoryPrepare;
 import app.course.category.CategoryAdapter;
+import app.course.sub_category.SubCategory;
 
 public class FragmentGeneral extends Fragment {
+    private ArrayList<SubCategory> sub_categories;
     private ArrayList<CategoryPrepare> categories_income_prepare;
     private ArrayList<CategoryPrepare> categories_expense_prepare;
     private ArrayList<Category> categories_income;
     private ArrayList<Category> categories_expense;
     private ArrayList<Integer> id_categories;
+    private ArrayList<String> removed_categories;
 
     private CategoryAdapter categories_income_adapter;
     private CategoryAdapter categories_expense_adapter;
 
-    private ListView category_income_list;
+    private RecyclerView category_income_recycler;
     private ListView category_expense_list;
     private TextView incomes_text;
     private TextView expense_text;
@@ -71,12 +71,14 @@ public class FragmentGeneral extends Fragment {
 
     private int income_sum = 0;
     private int expense_sum = 0;
+    private HashMap<Integer, ArrayList<SubCategory>> hash_map_categories;
 
     private FragmentManager fragmentManager;
     private ArrayList<Drawable> icons = new ArrayList<>();
     private Context context;
     private Handler handler;
     private Bundle bundle;
+    private DecimalFormat df = new DecimalFormat("#.#");
 
     private static FragmentGeneral fragmentGeneral;
 
@@ -85,32 +87,142 @@ public class FragmentGeneral extends Fragment {
     private PreparedStatement preparedStatement = null;
     private ResultSet resultSet = null;
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        getParentFragmentManager().setFragmentResultListener("fragmentSubKey", this,
+        getParentFragmentManager().setFragmentResultListener("update_id_categories", this,
                 (requestKey, result) -> {
-                    int new_sum = result.getInt("new_sum");
-                    int pos = result.getInt("pos");
-                    int different;
-                    int current_sum = ((Category)category_income_list.getItemAtPosition(pos)).getSum_category();
+            ArrayList<Integer> id_categories = result.getIntegerArrayList("id_categories");
+            ArrayList<String> names = result.getStringArrayList("names");
+            ArrayList<CategoryPrepare> temp = new ArrayList<>();
 
-                    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ПЕРЕДЕЛАТЬ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    // categories_income - список внутри ListView, а отображаемые данные в prepare
-                    // из за того что не получилось нормально парсить иконки
+            for (String name: names) {
+                for (CategoryPrepare categoryPrepare: categories_income_prepare) {
+                    if (categoryPrepare.getName_category().equals(name)) {
+                        temp.add(categoryPrepare);
+                        break;
+                    }
+                }
+            }
 
-                    different = new_sum - current_sum;
+            for (int i = 0; i < temp.size(); i++)
+                temp.get(i).setId_category(id_categories.get(i));
 
-                    ((Category)category_income_list.getItemAtPosition(pos)).setSum_category(new_sum);
-                    categories_income_prepare.get(pos).setSum_category(new_sum);
-                    categories_income_adapter.notifyDataSetChanged();
-
-                    income_sum += different;
-                    incomes_text.setText(String.valueOf(income_sum));
                 });
 
-        getChildFragmentManager().setFragmentResultListener("requestKey", this,
+        getParentFragmentManager().setFragmentResultListener("changedDate", this,
+                (requestKey, result) -> {
+            handler.post(() -> {
+                ArrayList<Integer> amounts = result.getIntegerArrayList("amounts");
+                ArrayList<String> names = result.getStringArrayList("names");
+                int sumIndex = 0;
+                int generalSum = 0;
+
+                if (names.size() == 0) {
+                    for (int i = 0; i < categories_income.size(); i++)
+                        categories_income.get(i).setSum_category(0);
+
+                    incomes_text.setText("0");
+                }
+
+                else {
+                    boolean isHas;
+
+                    for (int index = 0; index < categories_income.size(); index++) {
+                        isHas = false;
+                        for (String name: names) {
+                            if (categories_income.get(index).getName_category().equals(name)) {
+                                categories_income.get(index).setSum_category(amounts.get(sumIndex));
+                                generalSum += amounts.get(sumIndex);
+                                names.remove(name);
+
+                                sumIndex++;
+                                isHas = true;
+                                break;
+                            }
+                        }
+                        if (!isHas) categories_income.get(index).setSum_category(0);
+                    }
+
+                    incomes_text.setText(String.valueOf(generalSum));
+                }
+
+//                updatePercent(categories_income);
+                categories_income_adapter.notifyDataSetChanged();
+            });
+                });
+
+        getParentFragmentManager().setFragmentResultListener("result_sum", this,
+                (requestKey, result) -> {
+                    Bundle args = new Bundle();
+                    int pos = result.getInt("pos");
+                    int id_category = result.getInt("id_category");
+
+                    sub_categories = result.getParcelableArrayList("sub_categories");
+
+                    hash_map_categories.put(id_category, sub_categories);
+
+                    handler.post(() -> {
+                        int sum = 0;
+                        int diff_sum = 0;
+
+                        if (MainActivity.date.equals("Все время")) {
+                            sum = result.getInt("sum");
+                            diff_sum = sum - categories_income_prepare.get(pos).getSum_category();
+                            args.putInt("sum", diff_sum);
+                            args.putBoolean("action", true);
+
+                            getParentFragmentManager().setFragmentResult("change_diff_sum", args);
+                        }
+
+                        else {
+                            String[] date_range = MainActivity.date.split(":");
+
+                            if (date_range.length == 1) {
+                                for (SubCategory s: sub_categories) {
+                                    if (s.getDate_last_entry().equals(date_range[0])) sum += Integer.parseInt(s.getSum());
+                                }
+
+                                diff_sum = sum - categories_income_prepare.get(pos).getSum_category();
+                                args.putInt("sum", diff_sum);
+                                args.putBoolean("action", true);
+                                getParentFragmentManager().setFragmentResult("change_diff_sum", args);
+                            }
+
+                            if (date_range.length == 2) {
+                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+                                LocalDate first_date = LocalDate.parse(date_range[0], formatter);
+                                LocalDate second_date = LocalDate.parse(date_range[1], formatter);
+
+                                for (SubCategory s: sub_categories) {
+                                    LocalDate date = LocalDate.parse(s.getDate_last_entry(), formatter);
+                                    if ((date.isAfter(first_date) || date.isEqual(first_date)) &&
+                                            (date.isBefore(second_date) || date.isEqual(second_date))) {
+                                        diff_sum = sum - categories_income_prepare.get(pos).getSum_category();
+                                        args.putInt("sum", diff_sum);
+                                        args.putBoolean("action", true);
+                                        getParentFragmentManager().setFragmentResult("change_diff_sum", args);
+                                    }
+                                }
+                            }
+                        }
+
+                        categories_income.get(pos).setSum_category(sum);
+                        categories_income_prepare.get(pos).setSum_category(sum);
+
+                        income_sum += diff_sum;
+
+                        updatePercent(categories_income);
+
+                        categories_income_adapter.notifyDataSetChanged();
+                        incomes_text.setText(String.valueOf(income_sum));
+                    });
+                });
+
+        getParentFragmentManager().setFragmentResultListener("requestKey", this,
                 (requestKey, result) -> {
                     String color = result.getString("color");
                     String name = result.getString("name");
@@ -119,13 +231,22 @@ public class FragmentGeneral extends Fragment {
                     Drawable bg = getResources().getDrawable(R.drawable.shape_item_bg, getContext().getTheme());
                     bg.setTint(Color.parseColor(color));
 
+                    if (categories_income_adapter == null) {
+                        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
+                        linearLayoutManager.setOrientation(RecyclerView.VERTICAL);
+
+                        category_income_recycler.setLayoutManager(linearLayoutManager);
+                        categories_income_adapter = new CategoryAdapter(getActivity(), categories_income, categories_income_prepare,
+                                id_categories, hash_map_categories, icons, fragmentManager);
+                        category_income_recycler.setAdapter(categories_income_adapter);
+                    }
+
                     categories_income.add(new Category(bg, icons.get(id_icon), 0, "0", name));
-                    categories_income_prepare.add(new CategoryPrepare(color, id_icon, 0, "0", name));
+                    categories_income_prepare.add(new CategoryPrepare(color, id_icon, 0, "0", name, 0));
 
-                    categories_income_adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories_income);
-                    category_income_list.setAdapter(categories_income_adapter);
+                    category_income_recycler.setAdapter(categories_income_adapter);
 
-                    setHeightListView(category_income_list);
+//                    setHeightListView(category_income_list);
                     categories_income_adapter.notifyDataSetChanged();
 
                     try {
@@ -135,6 +256,29 @@ public class FragmentGeneral extends Fragment {
                         e.printStackTrace();
                     }
                 });
+    }
+
+    private void updatePercent(ArrayList<Category> categories_income) {
+        int sum_of_categories = 0;
+        for (Category category: categories_income) {
+            if (category.getSum_category() > 0) sum_of_categories += category.getSum_category();
+            else sum_of_categories += category.getSum_category() * (-1);
+        }
+        Log.d("MyLog", sum_of_categories + " sum");
+
+        for (int i = 0; i < categories_income_prepare.size(); i++) {
+            if (sum_of_categories != 0) {
+                double percent;
+                percent = (double)categories_income.get(i).getSum_category() / sum_of_categories * 100;
+
+                categories_income.get(i).setCategory_procent(df.format(percent));
+                categories_income_prepare.get(i).setCategory_procent(df.format(percent));
+            }
+            else {
+                categories_income.get(i).setCategory_procent("0");
+                categories_income_prepare.get(i).setCategory_procent("0");
+            }
+        }
     }
 
     public FragmentGeneral(Context context, FragmentManager fragmentManager) {
@@ -147,36 +291,8 @@ public class FragmentGeneral extends Fragment {
         View view = inflater.inflate(R.layout.fragment_general, container, false);
         init(view);
 
-        category_income_list.setOnItemClickListener((adapterView, view1, pos, l) -> {
-            Bundle bundle = new Bundle();
-            if (categories_income_prepare != null) {
-                CategoryPrepare object = categories_income_prepare.get(pos);
-
-                String color = object.getBg_color_category();
-                String name = object.getName_category();
-                int id_icon = object.getIcon_category();
-                int id_category = id_categories.get(pos);
-                int sum = object.getSum_category();
-
-                bundle.putString("color_sub", color);
-                bundle.putString("name_sub", name);
-                bundle.putInt("id_icon_sub", id_icon);
-                bundle.putInt("id_category", id_category);
-                bundle.putInt("sum_sub", sum);
-            }
-
-            FragmentSubCategory fragmentSubCategory = new FragmentSubCategory(icons, pos);
-            FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().
-                    replace(R.id.sub_fragment, fragmentSubCategory);
-            fragmentTransaction.commit();
-
-            getActivity().findViewById(R.id.main_fragment).setVisibility(View.GONE);
-            getActivity().findViewById(R.id.shadow_layout).setVisibility(View.GONE);
-
-            fragmentSubCategory.setArguments(bundle);
-        });
-
         incomes_add_btn.setOnClickListener(v -> {
+            int id_new_category;
             ArrayList<String> names = new ArrayList<>();
 
             if (categories_income_prepare != null) {
@@ -188,18 +304,21 @@ public class FragmentGeneral extends Fragment {
             bundle.putStringArrayList("income_category_names", names);
 
             DialogAddIncomeCategory dialogAddIncomeCategory = new DialogAddIncomeCategory();
-            dialogAddIncomeCategory.show(getChildFragmentManager(), "tag");
+            dialogAddIncomeCategory.show(getParentFragmentManager(), "tag");
             dialogAddIncomeCategory.setArguments(bundle);
+
+
         });
-
-
-
 
         return view;
     }
 
     private void init(View view) {
-        categories_income_adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories_income);
+        hash_map_categories = new HashMap<>();
+        removed_categories = new ArrayList<>();
+        sub_categories = new ArrayList<>();
+//        categories_income_adapter = new CategoryAdapter(getActivity(), categories_income, categories_income_prepare,
+//                id_categories, hash_map_categories, icons, fragmentManager);
 
         handler = new Handler(Looper.getMainLooper());
         id_categories = new ArrayList<>();
@@ -217,11 +336,14 @@ public class FragmentGeneral extends Fragment {
         categories_income = new ArrayList<>();
         categories_expense = new ArrayList<>();
 
-        category_income_list = view.findViewById(R.id.category_income_list);
+        category_income_recycler = view.findViewById(R.id.category_income_recycler);
         category_expense_list = view.findViewById(R.id.category_expense_list);
 
         incomes_text = view.findViewById(R.id.incomes_text);
+        incomes_text.setText("0");
+
         expense_text = view.findViewById(R.id.expenses_text);
+        expense_text.setText("0");
 
         bundle = this.getArguments();
 
@@ -232,27 +354,191 @@ public class FragmentGeneral extends Fragment {
             id_categories = bundle.getIntegerArrayList("id_categories");
         }
 
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
+        linearLayoutManager.setOrientation(RecyclerView.VERTICAL);
+
         if (categories_income_prepare != null) {
             if (!categories_income_prepare.isEmpty()) {
-                categories_income_adapter = setCategoryData(categories_income_prepare, categories_income, categories_income_adapter, category_income_list);
+                setCategoryData(categories_income_prepare, categories_income);
+                categories_income_adapter = new CategoryAdapter(getActivity(), categories_income, categories_income_prepare,
+                        id_categories, hash_map_categories, icons, fragmentManager);
+
+                updatePercent(categories_income);
+                categories_income_adapter.notifyDataSetChanged();
 
                 for (Category c: categories_income) income_sum += c.getSum_category();
                 incomes_text.setText(String.valueOf(income_sum));
-                setHeightListView(category_income_list);
+
+                category_income_recycler.setLayoutManager(linearLayoutManager);
+                category_income_recycler.setAdapter(categories_income_adapter);
+//                setHeightListView(category_income_list);
             }
         }
 
-        if (categories_expense_adapter != null) {
-            if (!categories_expense_adapter.isEmpty()) {
-                categories_expense_adapter = setCategoryData(categories_expense_prepare, categories_expense, categories_expense_adapter, category_expense_list);
 
-                for (Category c: categories_expense) expense_sum += c.getSum_category();
-                expense_text.setText(String.valueOf(expense_sum));
-                setHeightListView(category_expense_list);
+
+//        else {
+//            LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
+//            linearLayoutManager.setOrientation(RecyclerView.VERTICAL);
+//
+//            category_income_recycler.setLayoutManager(linearLayoutManager);
+//            categories_income_adapter = new CategoryAdapter(getActivity(), categories_income, categories_income_prepare,
+//                    id_categories, hash_map_categories, icons, fragmentManager);
+//            category_income_recycler.setAdapter(categories_income_adapter);
+//        }
+
+        /**
+         * Удаление подкатегории
+         */
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
             }
-        }
 
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                Bundle args = new Bundle();
+                int position = viewHolder.getAdapterPosition();
+                Category object = categories_income.get(position);
+                CategoryPrepare object_prepare = categories_income_prepare.get(position);
+
+                categories_income.remove(position);
+                categories_income_prepare.remove(position);
+                categories_income_adapter.notifyItemRemoved(position);
+                removed_categories.add(object.getName_category());
+
+                income_sum -= object_prepare.getSum_category();
+                incomes_text.setText(String.valueOf(income_sum));
+
+                args.putInt("sum", object_prepare.getSum_category());
+                args.putBoolean("action", false);
+
+                updatePercent(categories_income);
+                categories_income_adapter.notifyDataSetChanged();
+
+                getParentFragmentManager().setFragmentResult("change_diff_sum", args);
+
+                args.clear();
+
+                args.putBoolean("isSubCategory", false);
+                args.putBoolean("remove", true);
+                args.putInt("key", object_prepare.getId_category());
+
+                getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", args);
+
+                args.clear();
+
+                new Thread(() -> {
+                    try {
+                        Connection connection = null;
+                        PreparedStatement preparedStatement;
+
+                        String removed_names_items = "";
+
+                        for (int i = 0; i < removed_categories.size(); i++) {
+                            if (i == removed_categories.size() - 1) removed_names_items += "\'" + removed_categories.get(i) + "\'";
+                            else removed_names_items += "\'" + removed_categories.get(i) + "\'" + ",";
+                        }
+
+                        String query = "DELETE FROM category_income where id_user = " + User.getUser().getID_user() +
+                                " and name_category in (" + removed_names_items +")";
+
+                        Log.d("MyLog", query + " ");
+                        connection = dataBaseHandler.connect(connection);
+                        preparedStatement = connection.prepareStatement(query);
+
+                        preparedStatement.executeUpdate();
+                    }
+                    catch (SQLException | ClassNotFoundException e) {
+                        Log.d("MyLog", e.getMessage());
+                        e.printStackTrace();
+                    }
+                    finally {
+                        try {
+                            if (connection != null) dataBaseHandler.closeConnect(connection);
+                            if (preparedStatement != null) preparedStatement.close();
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }).start();
+
+                Snackbar.make(category_income_recycler, object.getName_category(), Snackbar.LENGTH_SHORT).
+                        setAction("восстановить", v -> {
+                            categories_income.add(position, object);
+                            categories_income_prepare.add(position, object_prepare);
+
+                            income_sum += object_prepare.getSum_category();
+                            incomes_text.setText(String.valueOf(income_sum));
+
+                            args.putInt("sum", object_prepare.getSum_category());
+                            args.putBoolean("action", true);
+
+                            getParentFragmentManager().setFragmentResult("change_diff_sum", args);
+
+                            args.clear();
+
+                            categories_income_adapter.notifyItemInserted(position);
+                            removed_categories.remove(object.getName_category());
+
+                            args.putBoolean("isSubCategory", false);
+                            args.putBoolean("remove", false);
+                            args.putInt("key", object_prepare.getId_category());
+
+                            getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", args);
+
+                            args.clear();
+
+                            new Thread(() -> {
+                                try {
+                                    Connection connection = null;
+                                    connection = dataBaseHandler.connect(connection);
+                                    PreparedStatement preparedStatement = connection.prepareStatement(Queries.addNewIncomeCategory());
+                                    preparedStatement.setInt(1, User.getUser().getID_user());
+                                    preparedStatement.setInt(2, object_prepare.getSum_category());
+                                    preparedStatement.setString(3, object_prepare.getName_category());
+                                    preparedStatement.setInt(4, object_prepare.getIcon_category());
+                                    preparedStatement.setString(5, object_prepare.getBg_color_category());
+
+                                    preparedStatement.executeUpdate();
+                                    preparedStatement.clearParameters();
+
+                                    String query = "INSERT INTO sub_category_income (ID_category, name_sub_category," +
+                                            "sub_sum, date_last_entry) ";
+                                    String values = "VALUES (";
+
+                                    query += values;
+                                    Log.d("MyLog", query);
+
+                                    preparedStatement = connection.prepareStatement(query);
+                                    preparedStatement.executeUpdate();
+                                    preparedStatement.clearParameters();
+                                }
+                                catch (ClassNotFoundException | SQLException e) {
+                                    Log.d("MyLog", e.getMessage());
+                                    e.printStackTrace();
+                                }
+                                finally {
+                                    try {
+                                        if (connection != null) dataBaseHandler.closeConnect(connection);
+                                        if (preparedStatement != null) preparedStatement.close();
+                                    }
+                                    catch (SQLException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }).start();
+                        }).show();
+                }
+            }).attachToRecyclerView(category_income_recycler);
         general_sum.setText(String.valueOf(income_sum - expense_sum));
+
+        Bundle result = new Bundle();
+        result.putInt("sum", income_sum - expense_sum);
+        result.putBoolean("action", true);
+
+        getParentFragmentManager().setFragmentResult("change_diff_sum", result);
     }
 
 
@@ -264,11 +550,9 @@ public class FragmentGeneral extends Fragment {
      * 3. Настравивается адаптер
      * @param prepare_categories подготовленные данные для ввода в список
      * @param categories категории, в которые добавляются данные
-     * @param adapter адаптер списка
-     * @param listView отображаемый список категорий
      */
-    public CategoryAdapter setCategoryData(ArrayList<CategoryPrepare> prepare_categories, ArrayList<Category>
-            categories, CategoryAdapter adapter, ListView listView) {
+    public void setCategoryData(ArrayList<CategoryPrepare> prepare_categories, ArrayList<Category>
+            categories) {
         for (int i = 0; i < prepare_categories.size(); i++) {
             Drawable item = AppCompatResources.getDrawable(getActivity().getBaseContext(), R.drawable.shape_item_bg);
             Drawable icon = icons.get(prepare_categories.get(i).getIcon_category());
@@ -276,13 +560,8 @@ public class FragmentGeneral extends Fragment {
             item.setTint(Color.parseColor(prepare_categories.get(i).getBg_color_category()));
 
             categories.add(new Category(item, icon, prepare_categories.get(i).getSum_category(),
-                    prepare_categories.get(i).getCategory_procent(),
-                    prepare_categories.get(i).getName_category()));
-
-            adapter = new CategoryAdapter(getActivity(), R.layout.list_item, categories);
-            listView.setAdapter(adapter);
+                    "0", prepare_categories.get(i).getName_category()));
         }
-        return adapter;
     }
     // ---------------------------------------------------------------------------------------------
 
@@ -409,5 +688,15 @@ public class FragmentGeneral extends Fragment {
             }
             return id_category;
         }
+    }
+
+
+    /**
+     * При уничтожении активтити выполняется запрос на удаление выбранных категорий из БД
+     */
+    @Override
+    public void onDestroy() {
+
+        super.onDestroy();
     }
 }

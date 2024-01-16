@@ -52,15 +52,29 @@
         </TextView>
     </androidx.appcompat.widget.LinearLayoutCompat>
 
-    <ListView
-        android:id="@+id/history_fr_categories_list"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/history_fr_categories_recycler"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
 
-        android:layout_marginTop="22dp"
+        android:layout_marginTop="12dp"
+        android:dividerHeight="7dp"
+        android:listSelector="@color/transparent"
+        android:scrollbars="vertical"
 
         app:layout_constraintTop_toBottomOf="@id/history_fr_text_btns"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent">
-    </ListView>
+    </androidx.recyclerview.widget.RecyclerView>
+
+    <ImageButton
+        android:id="@+id/back_btn_history"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:background="@drawable/ic_arrow_btn"
+        android:layout_marginBottom="60dp"
+
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

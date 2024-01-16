@@ -48,4 +48,5 @@ public class Category {
     public void setCategory_procent(String category_procent) {
         this.category_procent = category_procent;
     }
+
 }

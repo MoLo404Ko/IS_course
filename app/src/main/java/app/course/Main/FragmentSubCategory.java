@@ -9,7 +9,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentResultListener;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Handler;
 import android.os.Looper;
@@ -17,7 +21,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
@@ -25,10 +28,14 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.google.android.material.snackbar.Snackbar;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,15 +43,12 @@ import java.util.concurrent.Executors;
 import app.course.Queries;
 import app.course.R;
 import app.course.authorization.DataBaseHandler;
-import app.course.category.Category;
-import app.course.category.CategoryAdapter;
 import app.course.sub_category.DialogAddSubCategory;
 import app.course.sub_category.SubAdapter;
 import app.course.sub_category.SubCategory;
 
 public class FragmentSubCategory extends Fragment {
     private int pos;
-
     private ConstraintLayout main_category;
     private ConstraintLayout fragment_sub_categories;
     private RelativeLayout sub_add_btn;
@@ -55,9 +59,11 @@ public class FragmentSubCategory extends Fragment {
     private SubAdapter adapter = null;
 
     private ArrayList<String> names;
+    private ArrayList<String> removed_items;
     private ArrayList<String> date_last_entry;
+    private ArrayList<Integer> id_sub_categories;
     private ArrayList<Integer> sum;
-    private ListView sub_categories_list;
+    private RecyclerView sub_categories_recycler;
 
     private TextView main_category_name;
     private TextView main_category_sum;
@@ -72,9 +78,11 @@ public class FragmentSubCategory extends Fragment {
     private ExecutorService executorService;
     private Handler handler;
 
+
     private int current_sum;
     private int sum_category;
     private int id_category;
+    private String name;
 
     public FragmentSubCategory(ArrayList<Drawable> icons, int pos) {
         this.icons = icons;
@@ -83,27 +91,47 @@ public class FragmentSubCategory extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        getParentFragmentManager().setFragmentResultListener("setNewSumCategory", this, (requestKey, result) -> {
+            int sum = result.getInt("sum");
+            int pos = result.getInt("pos");
+
+            current_sum = Integer.parseInt(main_category_sum.getText().toString()) + sum;
+            sub_categories.get(pos).setSum(String.valueOf(current_sum));
+
+            String new_sum = String.valueOf(Integer.parseInt(main_category_sum.getText().toString()) + sum);
+            main_category_sum.setText(new_sum);
+
+            adapter.notifyDataSetChanged();
+
+            Bundle args = new Bundle();
+            args.putInt("id_category", id_category);
+            args.putInt("pos", pos);
+            args.putParcelableArrayList("sub_categories", sub_categories);
+        });
+
         getParentFragmentManager().setFragmentResultListener("add_sub_key", this,
                 (requestKey, result) -> {
-
                     String name = result.getString("name");
                     String sum = result.getString("sum");
                     String date = result.getString("date");
                     int id_category = result.getInt("id_category");
 
                     sub_categories.add(new SubCategory(name, date, sum, id_category));
-
-                    if (adapter == null) {
-                        adapter = new SubAdapter(getActivity(), R.layout.list_sub_item, sub_categories);
-                        sub_categories_list.setAdapter(adapter);
-                    }
+//                    if (adapter == null) {
+                        adapter = new SubAdapter(getContext(), sub_categories, getParentFragmentManager());
+                        sub_categories_recycler.setAdapter(adapter);
+//                    }
 
                     current_sum += Integer.parseInt(sum);
 
                     main_category_sum.setText(String.valueOf(current_sum));
-                    setHeightListView(sub_categories_list);
+                    sub_categories_recycler.getLayoutParams().height = 1000;
+//                    setHeightListView(sub_categories_list);
                     adapter.notifyDataSetChanged();
                 });
+
+
     }
 
     @Override
@@ -116,16 +144,45 @@ public class FragmentSubCategory extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_sub_category, container, false);
 
-        init(view);
+        getActivity().findViewById(R.id.main_fragment).setVisibility(View.GONE);
+        getActivity().findViewById(R.id.shadow_layout).setVisibility(View.GONE);
+
+        try {
+            init(view);
+        } catch (SQLException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
 
         btn_close.setOnClickListener(v -> {
             new Thread(() -> {
                 try {
                     if (connection != null) {
-                        preparedStatement = connection.prepareStatement(Queries.updateSumOfSubCategory());
+                        if (!removed_items.isEmpty()) {
+                            preparedStatement = connection.prepareStatement(Queries.removeItemFromSubCategory());
+
+                            for (int i = 0; i < removed_items.size(); i++) {
+                                preparedStatement.setString(1, removed_items.get(i));
+                                preparedStatement.setInt(2, id_category);
+                                preparedStatement.executeUpdate();
+                                preparedStatement.clearParameters();
+                            }
+                        }
+                        preparedStatement = connection.prepareStatement(Queries.updateSumOfCategory());
+
                         preparedStatement.setInt(1, current_sum);
                         preparedStatement.setInt(2, id_category);
                         preparedStatement.executeUpdate();
+
+                        Bundle result = new Bundle();
+
+                        result.putSerializable("sub_categories", sub_categories);
+                        result.putInt("id_category", id_category);
+                        result.putInt("sum", current_sum);
+                        result.putInt("pos", pos);
+
+                        getParentFragmentManager().setFragmentResult("result_sum", result);
+
+                        getParentFragmentManager().beginTransaction().detach(this);
                     }
                 }
                 catch (SQLException e) {
@@ -143,17 +200,18 @@ public class FragmentSubCategory extends Fragment {
                 }
             }).start();
 
-//            getActivity().findViewById(R.id.piechart_layout).setVisibility(View.VISIBLE);
-            getActivity().findViewById(R.id.main_fragment).setVisibility(View.VISIBLE);
-//            getActivity().findViewById(R.id.total_sum).setVisibility(View.VISIBLE);
-            getActivity().findViewById(R.id.shadow_layout).setVisibility(View.VISIBLE);
-//            getActivity().findViewById(R.id.buttons_linear).setVisibility(View.VISIBLE);
+            FragmentTransaction fragmentTransaction = getActivity().getSupportFragmentManager().beginTransaction();
 
-            getActivity().getSupportFragmentManager().beginTransaction().detach(this).commit();
+            getActivity().findViewById(R.id.main_fragment).setVisibility(View.VISIBLE);
+            getActivity().findViewById(R.id.shadow_layout).setVisibility(View.VISIBLE);
+
+            fragmentTransaction.detach(this).commit();
 
         });
 
         sub_add_btn.setOnClickListener(v -> {
+            int id = bundle.getInt("id_category");
+
             ArrayList<String> names = new ArrayList<>();
 
             for (SubCategory subCategory: sub_categories) names.add(subCategory.getName());
@@ -163,25 +221,84 @@ public class FragmentSubCategory extends Fragment {
             dialogAddSubCategory.show(getParentFragmentManager(), "add_sub_category");
 
             bundle.putStringArrayList("sub_category_names", names);
+            bundle.putString("name_category", name);
+            bundle.putIntegerArrayList("sub_category_id", id_sub_categories);
             bundle.putInt("pos", pos);
-            bundle.putInt("current_sum", sum_category);
+            bundle.putInt("current_sum", current_sum);
+            bundle.putInt("id_category", id);
 
             dialogAddSubCategory.setArguments(bundle);
         });
 
         fragment_sub_categories.setMinHeight(1000);
+
+        /**
+         * Удаление подкатегории
+         */
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                SubCategory object = sub_categories.get(position);
+                current_sum -= Integer.parseInt(object.getSum());
+                main_category_sum.setText(String.valueOf(current_sum));
+
+                sub_categories.remove(position);
+                removed_items.add(object.getName());
+                adapter.notifyItemRemoved(position);
+
+                Bundle result = new Bundle();
+
+                result.putInt("key", id_category);
+                result.putParcelable("object", object);
+                result.putBoolean("remove", true);
+                result.putBoolean("isSubCategory", true);
+                result.putInt("pos", position);
+
+                getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", result);
+
+                result.clear();
+
+                Snackbar.make(sub_categories_recycler, object.getName(), Snackbar.LENGTH_SHORT).
+                        setAction("восстановить", v -> {
+                            current_sum += Integer.parseInt(object.getSum());
+                            sub_categories.add(position, object);
+                            main_category_sum.setText(String.valueOf(current_sum));
+                            adapter.notifyItemInserted(position);
+
+                            removed_items.remove(object.getName());
+
+                            result.putInt("key", id_category);
+                            result.putParcelable("object", object);
+                            result.putBoolean("remove", false);
+                            result.putBoolean("isSubCategory", true);
+
+                            getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", result);
+                        }).show();
+
+
+
+            }
+        }).attachToRecyclerView(sub_categories_recycler);
+
         return view;
     }
 
-    private void init(View view) {
+    private void init(View view) throws SQLException, ClassNotFoundException {
         sub_add_btn = view.findViewById(R.id.sub_add_btn);
         fragment_sub_categories = view.findViewById(R.id.fragment_sub_categories);
         btn_close = view.findViewById(R.id.btn_close_sub_category);
 
-        sub_categories = new ArrayList<>();
+        removed_items = new ArrayList<>();
         names = new ArrayList<>();
         sum = new ArrayList<>();
         date_last_entry = new ArrayList<>();
+        id_sub_categories = new ArrayList<>();
 
         executorService = Executors.newSingleThreadExecutor();
         handler = new android.os.Handler(Looper.getMainLooper());
@@ -193,19 +310,21 @@ public class FragmentSubCategory extends Fragment {
         main_category_sum = view.findViewById(R.id.main_sub_category_sum);
         main_sub_category_icon = view.findViewById(R.id.main_sub_category_icon);
 
-        sub_categories_list = view.findViewById(R.id.sub_category_listview);
+        sub_categories_recycler = view.findViewById(R.id.sub_category_recycler);
 
         setMainCategory(bundle);
 
-        if (sub_categories_list.getCount() == 0) {
+//        if (sub_categories_list.getAdapter().getItemCount() == 0) {
             setSubListCategories(bundle);
-        }
+//        }
 
-        else {
-            for (int i = 0; i < sub_categories.size(); i++) {
-                Log.d("MyLog", sub_categories.get(i).getName());
-            }
-        }
+
+//
+//        else {
+//            for (int i = 0; i < sub_categories.size(); i++) {
+//                Log.d("MyLog", sub_categories.get(i).getName());
+//            }
+//        }
     }
 
     /**
@@ -218,7 +337,7 @@ public class FragmentSubCategory extends Fragment {
 
         current_sum = sum_category;
 
-        String name = (String) bundle.get("name_sub");
+        name = (String) bundle.get("name_sub");
         Drawable id_icon = icons.get((int)bundle.get("id_icon_sub"));
 
         main_category.setBackgroundTintList(ColorStateList.valueOf(color));
@@ -233,42 +352,84 @@ public class FragmentSubCategory extends Fragment {
      * Метод, выгружающий подкатегории из БД
      * @param bundle
      */
-    private void setSubListCategories(Bundle bundle) {
-        executorService.execute(() -> {
-            try {
-                boolean isFill = false;
-                id_category = (int)bundle.get("id_category");
-                connection = dataBaseHandler.connect(connection);
+    private void setSubListCategories(Bundle bundle)  {
+//        sub_categories = bundle.getParcelableArrayList("sub_categories");
+        MainActivity mainActivity = MainActivity.getMainActivity();
+        id_category = (int)bundle.get("id_category");
+        sub_categories = mainActivity.getMap_of_sub_categories().get(id_category);
 
-                preparedStatement = connection.prepareStatement(Queries.getSubCategories());
-                preparedStatement.setInt(1, id_category);
-                resultSet = preparedStatement.executeQuery();
+        if (sub_categories != null) {
+            Log.d("MyLog", "not null");
+            adapter = new SubAdapter(getContext(), sub_categories, getParentFragmentManager());
 
-                while (resultSet.next()) {
-                    names.add(resultSet.getString(1));
-                    sum.add(resultSet.getInt(2));
-                    date_last_entry.add(String.valueOf(resultSet.getDate(3)));
-                    isFill = true;
+            LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
+            linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+
+            sub_categories_recycler.setLayoutManager(linearLayoutManager);
+            sub_categories_recycler.setHasFixedSize(false);
+            sub_categories_recycler.setItemAnimator(new DefaultItemAnimator());
+            sub_categories_recycler.setAdapter(adapter);
+
+            new Thread(() -> {
+                try {
+                    connection = dataBaseHandler.connect(connection);
                 }
+                catch (SQLException | ClassNotFoundException e) {
+                    Log.d("MyLog", e.getMessage());
+                    e.printStackTrace();
+                }
+            }).start();
+        }
 
-                if (isFill) {
-                    for (int i = 0; i < names.size(); i++) {
-                        sub_categories.add(new SubCategory(names.get(i), date_last_entry.get(i), String.valueOf(sum.get(i)), id_category));
+        else {
+            Log.d("MyLog", "is null");
+            executorService.execute(() -> {
+                try {
+                    sub_categories = new ArrayList<>();
+                    boolean isFill = false;
+                    connection = dataBaseHandler.connect(connection);
+                    preparedStatement = connection.prepareStatement(Queries.getSubCategories());
+                    preparedStatement.setInt(1, id_category);
+                    resultSet = preparedStatement.executeQuery();
+
+                    while (resultSet.next()) {
+                        String[] date_parse;
+                        String ready_date;
+
+                        date_parse = resultSet.getDate(3).toString().split("-");
+                        ready_date = date_parse[2] + "-" + date_parse[1] + "-" + date_parse[0];
+
+                        names.add(resultSet.getString(1));
+                        sum.add(resultSet.getInt(2));
+                        id_sub_categories.add(resultSet.getInt(4));
+                        date_last_entry.add(ready_date);
+                        isFill = true;
+                    }
+
+                    if (isFill) {
+                        for (int i = 0; i < names.size(); i++) {
+                            sub_categories.add(new SubCategory(names.get(i), date_last_entry.get(i), String.valueOf(sum.get(i)), id_category));
+                        }
                     }
 
                     handler.post(() -> {
-                        adapter = new SubAdapter(getContext(), R.layout.list_sub_item, sub_categories);
-                        sub_categories_list.setAdapter(adapter);
-                        setHeightListView(sub_categories_list);
+                        adapter = new SubAdapter(getContext(), sub_categories, getParentFragmentManager());
+                        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
+                        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+                        sub_categories_recycler.setLayoutManager(linearLayoutManager);
+                        sub_categories_recycler.setHasFixedSize(false);
+                        sub_categories_recycler.setItemAnimator(new DefaultItemAnimator());
+                        sub_categories_recycler.setAdapter(adapter);
+    //                        setHeightListView(sub_categories_list);
                     });
                 }
-            }
-            catch (SQLException | ClassNotFoundException e) {
-                Log.d("MyLog", e.getMessage());
-                e.printStackTrace();
-            }
-        });
-        executorService.shutdown();
+                catch (SQLException | ClassNotFoundException e) {
+                    Log.d("MyLog", e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+            executorService.shutdown();
+        }
     }
 
     /**
@@ -293,7 +454,4 @@ public class FragmentSubCategory extends Fragment {
         params.height = totalHeight + (listView.getDividerHeight() * (listAdapter.getCount() - 1));
         listView.setLayoutParams(params);
     }
-
-
-
 }

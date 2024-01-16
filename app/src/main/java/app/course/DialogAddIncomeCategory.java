@@ -24,9 +24,19 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import app.course.authorization.Authorization;
+import app.course.authorization.DataBaseHandler;
 import app.course.category.CategoryPrepare;
 
 public class DialogAddIncomeCategory extends DialogFragment {
@@ -50,6 +60,9 @@ public class DialogAddIncomeCategory extends DialogFragment {
     private int id_icon;
     private Bundle result = new Bundle();
     private Bundle bundle = new Bundle();
+
+    private ArrayList<Integer> id_categories = new ArrayList<>();
+    private ArrayList<String> new_names = new ArrayList<>();
 
 
 
@@ -87,6 +100,38 @@ public class DialogAddIncomeCategory extends DialogFragment {
         });
 
         btn_close_dialog_add_category.setOnClickListener(view1 -> {
+            try {
+                id_categories = getIdNewSubCategory(new_names);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            Bundle args = new Bundle();
+            args.putIntegerArrayList("id_categories", id_categories);
+            args.putStringArrayList("names", new_names);
+            getParentFragmentManager().setFragmentResult("update_id_categories", args);
+//            int id_new_category;
+
+//            try {
+//                if (!name_add_category_income_edit.getText().toString().isEmpty()) {
+//                    id_new_category = getIdNewCategory(name_add_category_income_edit.getText().toString());
+//                    Log.d("MyLog", id_new_category + " key_dialog");
+//                    Bundle args = new Bundle();
+//                    args.putInt("key", id_new_category);
+//                    args.putBoolean("isSubCategory", false);
+//                    args.putBoolean("remove", false);
+//
+//                    Log.d("MyLog", "w");
+//                    getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", args);
+//                    Log.d("MyLog", "d");
+//                }
+//            }
+//            catch (ExecutionException | InterruptedException e) {
+//                throw new RuntimeException(e);
+//            }
+
             dismiss();
         });
         return view;
@@ -139,6 +184,7 @@ public class DialogAddIncomeCategory extends DialogFragment {
         result.putInt("icon", id_icon);
         result.putString("name", name_add_category_income_edit.getText().toString());
 
+        new_names.add(name_add_category_income_edit.getText().toString());
         getParentFragmentManager().setFragmentResult("requestKey", result);
     }
 
@@ -218,6 +264,49 @@ public class DialogAddIncomeCategory extends DialogFragment {
             public void onClick(View view) {
             }
         });
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    private ArrayList<Integer> getIdNewSubCategory(ArrayList<String> names) throws ExecutionException, InterruptedException {
+        ExecutorService es = Executors.newSingleThreadExecutor();
+        Future<ArrayList<Integer>> future = es.submit(new GetIdTask(names));
+
+        es.shutdown();
+        return future.get();
+    }
+
+    private static class GetIdTask implements Callable<ArrayList<Integer>> {
+        private DataBaseHandler dataBaseHandler = DataBaseHandler.getDataBaseHadler();
+        private Connection connection = null;
+        private PreparedStatement preparedStatement = null;
+        private ResultSet resultSet = null;
+
+        private ArrayList<String> names;
+        private ArrayList<Integer> id_categories = new ArrayList<>();
+        private String part_of_query = "";
+
+
+        public GetIdTask(ArrayList<String> names) {
+            this.names = names;
+        }
+
+        @Override
+        public ArrayList<Integer> call() throws Exception {
+            for (int i = 0; i < names.size(); i++) {
+                if (i != names.size() - 1) part_of_query += "\'" + names.get(i) + "\',";
+                else part_of_query += "\'" + names.get(i) + "\'";
+            }
+
+            connection = dataBaseHandler.connect(connection);
+            preparedStatement = connection.prepareStatement(Queries.getNewIdCategories(part_of_query));
+            preparedStatement.setInt(1, User.getUser().getID_user());
+
+            resultSet = preparedStatement.executeQuery();
+
+            while (resultSet.next()) id_categories.add(resultSet.getInt(1));
+
+            return id_categories;
+        }
     }
 
     public static DialogAddIncomeCategory getDialogAddIncomeCategory() {

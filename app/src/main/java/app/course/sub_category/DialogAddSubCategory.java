@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -18,18 +17,18 @@ import androidx.fragment.app.DialogFragment;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Locale;
 
 import app.course.Queries;
 import app.course.R;
+import app.course.User;
 import app.course.authorization.Authorization;
 import app.course.authorization.DataBaseHandler;
 
@@ -49,7 +48,10 @@ public class DialogAddSubCategory extends DialogFragment {
     private Connection connection = null;
     private PreparedStatement preparedStatement = null;
 
+    private String name_category;
     private ArrayList<String> names = new ArrayList<>();
+//    private ArrayList<String> new_names = new ArrayList<>();
+//    private ArrayList<Integer> id_sub_categories = new ArrayList<>();
 
     private Bundle bundle = new Bundle();
     private int id_category = 0;
@@ -63,6 +65,7 @@ public class DialogAddSubCategory extends DialogFragment {
 
         if (bundle.getStringArrayList("sub_category_names") != null) {
             names = bundle.getStringArrayList("sub_category_names");
+//            id_sub_categories = bundle.getIntegerArrayList("sub_category_id");
         }
     }
 
@@ -71,13 +74,44 @@ public class DialogAddSubCategory extends DialogFragment {
         View view = inflater.inflate(R.layout.dialog_add_sub_category, container, false);
         init(view);
         btn_close_dialog_add_sub_category.setOnClickListener(v -> {
-            try {
-                if (connection != null) dataBaseHandler.closeConnect(connection);
-                if (preparedStatement != null) preparedStatement.close();
-            }
-            catch (SQLException e) {
-                Log.d("MyLog", e.getMessage());
-                e.printStackTrace();
+            if (!name_add_sub_category_edit.getText().toString().isEmpty()) {
+                SubCategory object = new SubCategory(name_add_sub_category_edit.getText().toString(),
+                        date_edit_text_add_dialog.getText().toString(), sum_edit_text_add_dialog.getText().toString(),
+                        id_category);
+                new Thread(() -> {
+                    Connection conn = null;
+                    PreparedStatement st = null;
+                    LocalDate date = LocalDate.now();
+
+                    try {
+                        conn = dataBaseHandler.connect(conn);
+                        st = conn.prepareStatement(Queries.addHistoryItem());
+                        st.setString(1, String.valueOf(date));
+                        st.setString(2, name_add_sub_category_edit.getText().toString());
+                        st.setInt(3, User.getUser().getID_user());
+                        st.setString(4, name_category);
+                        st.setInt(5, Integer.parseInt(sum_edit_text_add_dialog.getText().toString()));
+
+                        st.executeUpdate();
+                    }
+                    catch (SQLException | ClassNotFoundException e) {
+                        Log.d("MyLog", e.getMessage());
+                        e.printStackTrace();
+                    }
+                    finally {
+                        try {
+                            if (conn != null) dataBaseHandler.closeConnect(conn);
+                            if (st != null) st.close();
+                        }
+                        catch (SQLException e) {
+                            Log.d("MyLog", e.getMessage());
+                        }
+                    }
+                }).start();
+
+                Bundle args = new Bundle();
+                args.putParcelable("object", object);
+                getParentFragmentManager().setFragmentResult("addNewItemHistory", args);
             }
 
             dismiss();
@@ -121,7 +155,7 @@ public class DialogAddSubCategory extends DialogFragment {
                             java.sql.Date sql_date = new java.sql.Date(date.getTime());
 
                             connection = dataBaseHandler.connect(connection);
-                            preparedStatement = connection.prepareStatement(Queries.setSubCategory());
+                            preparedStatement = connection.prepareStatement(Queries.addSubCategory());
 
                             preparedStatement.setInt(1,id_category);
                             preparedStatement.setString(2, name_add_sub_category_edit.getText().toString());
@@ -129,9 +163,21 @@ public class DialogAddSubCategory extends DialogFragment {
                             preparedStatement.setDate(4, sql_date);
 
                             preparedStatement.executeUpdate();
+
+                            preparedStatement.clearParameters();
                         }
                         catch (SQLException | ClassNotFoundException | ParseException e) {
                             Log.d("MyLog", e.getMessage());
+                        }
+                        finally {
+                            try {
+                                if (connection != null) dataBaseHandler.closeConnect(connection);
+                                if (preparedStatement != null) preparedStatement.close();
+                            }
+                            catch (SQLException e) {
+                                Log.d("MyLog", e.getMessage());
+                                e.printStackTrace();
+                            }
                         }
                     }).start();
                 }
@@ -141,7 +187,16 @@ public class DialogAddSubCategory extends DialogFragment {
         sub_category_date_btn.setOnClickListener(v -> {
             DatePickerDialog datePickerDialog = new DatePickerDialog(getContext());
             datePickerDialog.setOnDateSetListener((datePicker, i, i1, i2) -> {
-                date_edit_text_add_dialog.setText(String.valueOf(i2) + "-" + String.valueOf(i1 + 1) + "-" + String.valueOf(i));
+                String month = "";
+                String day = "";
+
+                if (i2 < 10) day += "0" + i2;
+                else day = String.valueOf(i2);
+
+                if (i1 + 1 < 10) month += "0" + (int)(i1 + 1);
+                else month = String.valueOf(i1 + 1);
+
+                date_edit_text_add_dialog.setText(day + "-" + month + "-" + (i));
             });
 
             datePickerDialog.show();
@@ -151,6 +206,7 @@ public class DialogAddSubCategory extends DialogFragment {
     }
 
     private void init(View view) {
+        name_category = bundle.getString("name_category");
         id_category = (int)bundle.get("id_category");
         pos = (int)bundle.get("pos");
         current_sum = (int)bundle.get("current_sum");
@@ -174,8 +230,19 @@ public class DialogAddSubCategory extends DialogFragment {
         result.putInt("id_category", id_category);
 
         names.add(name_add_sub_category_edit.getText().toString());
-
         getParentFragmentManager().setFragmentResult("add_sub_key", result);
+
+        result.clear();
+
+        SubCategory subCategory = new SubCategory(name_add_sub_category_edit.getText().toString(),
+                date_edit_text_add_dialog.getText().toString(), sum_edit_text_add_dialog.getText().toString(), id_category);
+
+        result.putInt("key", id_category);
+        result.putParcelable("object", subCategory);
+        result.putBoolean("remove", false);
+        result.putBoolean("isSubCategory", true);
+
+        getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", result);
     }
 
     /**

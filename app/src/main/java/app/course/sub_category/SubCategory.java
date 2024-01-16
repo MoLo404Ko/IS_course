@@ -1,14 +1,20 @@
 package app.course.sub_category;
 
+import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 
 import androidx.annotation.NonNull;
 
-public class SubCategory implements Parcelable {
+import java.util.ArrayList;
+
+public class SubCategory extends BaseAdapter implements Parcelable  {
     private String name;
-    private String date_last_entry;
     private String sum;
+    private String date_last_entry;
     private int id_category;
 
     public SubCategory(String name, String date_last_entry, String sum, int id_category) {
@@ -20,8 +26,8 @@ public class SubCategory implements Parcelable {
 
     protected SubCategory(Parcel in) {
         name = in.readString();
-        date_last_entry = in.readString();
         sum = in.readString();
+        date_last_entry = in.readString();
         id_category = in.readInt();
     }
 
@@ -53,6 +59,10 @@ public class SubCategory implements Parcelable {
         return sum;
     }
 
+    public void setSum(String sum) {
+        this.sum = sum;
+    }
+
     public int getId_category() {return id_category;}
 
     @Override
@@ -63,8 +73,28 @@ public class SubCategory implements Parcelable {
     @Override
     public void writeToParcel(@NonNull Parcel parcel, int i) {
         parcel.writeString(name);
-        parcel.writeString(date_last_entry);
         parcel.writeString(sum);
+        parcel.writeString(date_last_entry);
         parcel.writeInt(id_category);
+    }
+
+    @Override
+    public int getCount() {
+        return 0;
+    }
+
+    @Override
+    public Object getItem(int i) {
+        return null;
+    }
+
+    @Override
+    public long getItemId(int i) {
+        return 0;
+    }
+
+    @Override
+    public View getView(int i, View view, ViewGroup viewGroup) {
+        return null;
     }
 }

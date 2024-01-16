@@ -74,8 +74,8 @@
                 </androidx.appcompat.widget.LinearLayoutCompat>
             </RelativeLayout>
 
-            <ListView
-                android:id="@+id/category_income_list"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/category_income_recycler"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
 
@@ -86,12 +86,12 @@
                 android:layout_marginTop="12dp"
 
                 android:listSelector="@color/transparent"
-                android:scrollbars="none"
+                android:scrollbars="vertical"
 
                 app:layout_constraintTop_toBottomOf="@id/incomes_add_btn"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toRightOf="parent">
-            </ListView>
+            </androidx.recyclerview.widget.RecyclerView>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -103,7 +103,7 @@
                 style="@style/boldFont_16"
 
                 app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/category_income_list">
+                app:layout_constraintTop_toBottomOf="@id/category_income_recycler">
             </TextView>
 
             <TextView
@@ -116,7 +116,7 @@
                 style="@style/boldFont_16"
 
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/category_income_list">
+                app:layout_constraintTop_toBottomOf="@id/category_income_recycler">
             </TextView>
 
             <ListView

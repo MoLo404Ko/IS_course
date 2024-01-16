@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="286dp"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
@@ -43,8 +43,8 @@
         android:maxLines="1"
         android:inputType="text"
 
-        android:layout_marginRight="20dp"
-        android:layout_marginLeft="20dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="10dp"
 
         android:paddingLeft="10dp"
         android:layout_marginTop="7dp"
@@ -56,9 +56,12 @@
 
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/sum_and_date_layout_add_dialog"
-        android:layout_width="266dp"
+        android:layout_width="268dp"
         android:layout_height="wrap_content"
         android:weightSum="2"
+
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
 
         android:layout_marginTop="15dp"
 
@@ -117,6 +120,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
 
+                    android:focusable="false"
                     android:background="@drawable/shape_edit_text_add_dialog"
 
                     app:layout_constraintLeft_toLeftOf="parent"

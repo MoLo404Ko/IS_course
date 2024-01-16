@@ -3,14 +3,13 @@ package app.course.Main;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
-import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.graphics.Color;
-import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -20,13 +19,13 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.DatePicker;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -39,29 +38,39 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import app.course.Queries;
 import app.course.R;
 import app.course.User;
+import app.course.add_new_item.DialogAddNewItem;
 import app.course.authorization.DataBaseHandler;
-import app.course.category.Category;
 import app.course.category.CategoryPrepare;
+import app.course.history.FragmentHistory;
 import app.course.menu_fragments.AmountsFragment;
 import app.course.menu_fragments.CategoryFragment;
 import app.course.menu_fragments.HomeFragment;
 import app.course.menu_fragments.SettingsFragment;
+import app.course.sub_category.SubCategory;
 
 
 public class MainActivity extends AppCompatActivity {
+    private static MainActivity mainActivity = new MainActivity();
     private Handler handler;
     private int income_sum;
     private int press_count = 0;
-    long start_time;
+    private long start_time;
 
     private Bundle extras = null;
 
@@ -71,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
     private PieChart pieChart;
     private RelativeLayout pieChart_layout;
     private FrameLayout sub_fragment;
+    private LinearLayout date_picker_shadow;
 
     private RelativeLayout all_time, one_day, week, month, range, year;
 
@@ -79,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
     private Button datePicker;
     private ImageButton add_button, minus_button, history_button;
     private Spinner dropDown;
+    private TextView total_sum;
 
     private BottomNavigationView bottomNavigationView;
 
@@ -88,9 +99,22 @@ public class MainActivity extends AppCompatActivity {
     private PreparedStatement st = null;
     private ResultSet rs = null;
 
+    private ArrayList<SubCategory> sub_categories;
     private ArrayList<CategoryPrepare> categories_income;
     private ArrayList<CategoryPrepare> categories_expense;
+
+    private ArrayList<Drawable> icons_income;
     private ArrayList<Integer> id_categories = new ArrayList<>();
+    private String full_date = "";
+    private String request_date_first = "";
+    private String request_date_second = "";
+
+    public static String date;
+    private ArrayList<SubCategory>[] save_array = new ArrayList[1];
+
+    private static HashMap<Integer, ArrayList<SubCategory>> map_of_sub_categories;
+    private static HashMap<Date, ArrayList<SubCategory>> map_of_history;
+
     private NavigationBarView.OnItemSelectedListener listener_nav = item -> {
         switch (item.getItemId()) {
             case R.id.home_menu:
@@ -136,6 +160,16 @@ public class MainActivity extends AppCompatActivity {
             press_count = 2;
         }
 
+        for (Integer key: map_of_sub_categories.keySet()) {
+            Log.d("MyLog", key + " key");
+            if (map_of_sub_categories.get(key) != null) {
+                for (int i = 0; i < map_of_sub_categories.get(key).size(); i++) {
+                    Log.d("MyLog", map_of_sub_categories.get(key).get(i).getName());
+                }
+            }
+            Log.d("MyLog", "------------------------------------");
+        }
+
         return true;
     }
 
@@ -144,32 +178,167 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        getSupportFragmentManager().setFragmentResultListener("backBtn", this,
+                (requestKey, result) -> {
+
+            shadow_layout.setVisibility(View.VISIBLE);
+            buttons_linear.setVisibility(View.VISIBLE);
+            pieChart_layout.setVisibility(View.VISIBLE);
+            dropDown.setVisibility(View.VISIBLE);
+            datePicker.setVisibility(View.VISIBLE);
+            total_sum.setVisibility(View.VISIBLE);
+            date_picker_shadow.setVisibility(View.VISIBLE);
+            main_fragment.setVisibility(View.VISIBLE);
+
+            fragmentGeneral = new FragmentGeneral(getBaseContext(), getSupportFragmentManager());
+
+            categories_income = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_income");
+            categories_expense = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_expense");
+            id_categories = getIntent().getIntegerArrayListExtra("id_categories");
+
+            Bundle args = new Bundle();
+
+            args.putSerializable("categories_income", categories_income);
+            args.putSerializable("categories_expense", categories_expense);
+            args.putIntegerArrayList("id_categories", id_categories);
+            fragmentGeneral.setArguments(args);
+
+            fragmentTransaction = getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, fragmentGeneral);
+            fragmentTransaction.commit();
+        });
+
+        getSupportFragmentManager().setFragmentResultListener("change_diff_sum", this,
+                (requestKey, result) -> {
+            boolean change_date = result.getBoolean("change_date");
+            // Переменная сложения или вычитания, false - вычитание, true - сложение
+            boolean action = result.getBoolean("action");
+            int current_sum = 0;
+
+            if (!total_sum.getText().toString().equals("")) {
+                current_sum = Integer.parseInt(total_sum.getText().toString().replace("$", ""));
+            }
+
+            int diff_sum = result.getInt("sum");
+
+            if (!change_date) {
+                if (action) current_sum += diff_sum;
+                else current_sum -= diff_sum;
+            }
+            else current_sum = diff_sum;
+
+            total_sum.setText(current_sum + "$");
+                });
+
+        /**
+         * Изменение списка мапы попдкатегорий при удалении или добавлении подкатегории и категории
+         */
+        getSupportFragmentManager().setFragmentResultListener("edit_map_of_sub_categories_by", this,
+                (requestKey, result) -> {
+            int key = result.getInt("key");
+            boolean isSubCategory = result.getBoolean("isSubCategory");
+            boolean remove = result.getBoolean("remove");
+            SubCategory object = null;
+
+            if (result.getParcelable("object") != null) {
+                object = result.getParcelable("object");
+            }
+
+            save_array[0] = map_of_sub_categories.get(key);
+
+            if (isSubCategory) {
+                if (!remove) {
+                    if (!map_of_sub_categories.containsKey(key)) {
+                        ArrayList<SubCategory> list = new ArrayList<>();
+                        list.add(object);
+                        map_of_sub_categories.put(key, list);
+                    }
+                    else {
+                        // тут происходит магия, я не понимаю почему, но оно работает
+                        // скорее всего в список обратно добавляется item ,но не здесь и я не знаю где :(
+                        Log.d("MyLog", "i'm entry");
+//                        Objects.requireNonNull(map_of_sub_categories.get(key)).add(object);
+                    }
+                }
+                else {
+                    Objects.requireNonNull(map_of_sub_categories.get(key)).remove(object);
+                }
+            }
+
+            else {
+                if(!remove) map_of_sub_categories.put(key, save_array[0]);
+                else map_of_sub_categories.remove(key);
+            }
+            setMap_of_sub_categories(map_of_sub_categories);
+                });
+
         try {
             init();
-        } catch (SQLException e) {
+        } catch (SQLException | ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+
+        getSupportFragmentManager().setFragmentResultListener("addNewItemHistory", this,
+                (requestKey, result) -> {
+                    LocalDate date = LocalDate.now();
+                    Date key = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+
+                    SubCategory object = (SubCategory) result.getParcelable("object");
+
+                    if (map_of_history.containsKey(key)) {
+                        Log.d("MyLog", "hasKey");
+                        Objects.requireNonNull(map_of_history.get(key)).add(object);
+                    }
+                    else {
+                        Log.d("MyLog", "hasn'tKey");
+                        map_of_history.put(key, new ArrayList<SubCategory>());
+                        Objects.requireNonNull(map_of_history.get(key)).add(object);
+                    }
+
+                    for (Date k: map_of_history.keySet()) {
+                        for (int i = 0; i < map_of_history.get(k).size(); i++) {
+                            Log.d("MyLog", map_of_history.get(k).get(i).getName() + " item");
+                        }
+                    }
+
+                    mainActivity.setMap_of_history(map_of_history);
+                });
+
+        setOnClickHistoryBtn();
 
         datePicker.setOnClickListener(view -> {
             Dialog dialog = new Dialog(MainActivity.this);
             dialog.setContentView(R.layout.custom_dialog_date);
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
-            one_day = (RelativeLayout)dialog.findViewById(R.id.one_day_btn);
+            one_day = dialog.findViewById(R.id.one_day_btn);
+            range = dialog.findViewById(R.id.range_btn);
+            all_time = dialog.findViewById(R.id.all_time_btn);
 
-            one_day.setOnClickListener(view_1 -> {
-                setDatePicker(view_1);
-            });
+
+            one_day.setOnClickListener(view_1 -> setDatePicker(view_1, dialog));
+            range.setOnClickListener(view_2 -> setDatePicker(view_2, dialog));
+            all_time.setOnClickListener(view_5 -> setDatePicker(view_5, dialog));
 
             dialog.show();
         });
 
+        add_button.setOnClickListener(view -> {
+            Bundle args = new Bundle();
+
+            DialogAddNewItem dialogAddNewItem = new DialogAddNewItem();
+            args.putSerializable("incomes_list", categories_income);
+
+            dialogAddNewItem.setArguments(args);
+            dialogAddNewItem.show(getSupportFragmentManager(), "tag");
+        });
 
     }
 
-    public void init() throws SQLException {
+    public void init() throws SQLException, ExecutionException, InterruptedException {
         handler = new Handler(Looper.getMainLooper());
         add_button = findViewById(R.id.add_btn);
+        history_button = findViewById(R.id.history_btn);
+        total_sum = findViewById(R.id.total_sum);
 
         sub_fragment = findViewById(R.id.sub_fragment);
         extras = getIntent().getExtras();
@@ -178,6 +347,7 @@ public class MainActivity extends AppCompatActivity {
         buttons_linear = findViewById(R.id.buttons_linear);
 
         main_fragment = findViewById(R.id.main_fragment);
+        date_picker_shadow = findViewById(R.id.date_picker_shadow);
         shadow_layout = findViewById(R.id.shadow_layout);
 
         pieChart = new PieChart(this);
@@ -188,10 +358,11 @@ public class MainActivity extends AppCompatActivity {
 
         datePicker = findViewById(R.id.date_picker);
 
+        datePicker.setText(R.string.all_time_date);
+        MainActivity.date = datePicker.getText().toString();
 
         bottomNavigationView = findViewById(R.id.bottomNav);
         bottomNavigationView.setOnItemSelectedListener(listener_nav);
-
 
         setDropDown();
 
@@ -199,6 +370,12 @@ public class MainActivity extends AppCompatActivity {
 
         categories_income = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_income");
         categories_expense = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_expense");
+
+        sub_categories = getSubCategories();
+        mainActivity.setSub_categories(sub_categories);
+        map_of_sub_categories = setHashMap();
+        map_of_history = get_map_of_history();
+
         id_categories = getIntent().getIntegerArrayListExtra("id_categories");
 
         Bundle args = new Bundle();
@@ -233,56 +410,88 @@ public class MainActivity extends AppCompatActivity {
     }
     // ---------------------------------------------------------------------------------------------
 
-    private void setDatePicker(View view) {
-        ArrayList<Integer> list_incomes = new ArrayList<>();
+    private void setDatePicker(View view, Dialog dialog) {
+        request_date_first = "";
+        request_date_second = "";
 
         switch (view.getId()) {
+            case R.id.range_btn: {
+                DatePickerDialog firstDate = new DatePickerDialog(MainActivity.this);
+
+                firstDate.setOnDateSetListener((dateP, i, i1, i2) -> {
+                    String month1 = "";
+                    String day1 = "";
+
+                    if (i1 + 1 < 10) month1 = "0" + (i1 + 1);
+                    else month1 = String.valueOf(i1 + 1);
+
+                    if (i2 < 10) day1 = "0" + i2;
+                    else day1 = String.valueOf(i2);
+
+                    request_date_first = i + "-" + (i1 + 1) + "-" + i2;
+                    full_date += day1 + "-" + month1 + "-" + i + ":";
+
+                    DatePickerDialog secondDate = new DatePickerDialog(MainActivity.this);
+
+                    secondDate.setOnDateSetListener((dateP1, year, i11, i21) -> {
+                        String month2 = "";
+                        String day2 = "";
+
+                        if (i11 + 1 < 10) month2 = "0" + (i11 + 1);
+                        else month2 = String.valueOf(i11 + 1);
+
+                        if (i21 < 10) day2 = "0" + i21;
+                        else day2 = String.valueOf(i21);
+
+                        request_date_second = year + "-" + (i11 + 1) + "-" + i21;
+                        full_date += day2 + "-" + month2 + "-" + year;
+                        datePicker.setText(full_date);
+
+                        setSumOfCategory(0);
+                        MainActivity.date = full_date;
+                        full_date = "";
+                    });
+                    secondDate.show();
+                });
+                firstDate.show();
+
+                break;
+            }
+
             case R.id.one_day_btn: {
                 DatePickerDialog datePickerDialog = new DatePickerDialog(MainActivity.this);
-                datePickerDialog.setOnDateSetListener(new DatePickerDialog.OnDateSetListener() {
-                    @Override
-                    public void onDateSet(DatePicker dateP, int i, int i1, int i2) {
+                datePickerDialog.setOnDateSetListener((dateP, i, i1, i2) -> {
+                    String month = "";
+                    String day = "";
 
-                        datePicker.setText(String.valueOf(i) + "." + String.valueOf(i1 + 1) + "." + String.valueOf(i2));
-                        new Thread(() -> {
+                    if (i1 + 1 < 10) month = "0" + (i1 + 1);
+                    else month = String.valueOf(i1 + 1);
 
-                            try {
-                                conn = db.connect(conn);
-                                st = conn.prepareStatement(Queries.getSumForOneDay());
-                                st.setInt(1, user.getID_user());
-                                st.setString(2, String.valueOf(datePicker.getText()));
+                    if (i2 < 10) day = "0" + i2;
+                    else day = String.valueOf(i2);
 
-                                rs = st.executeQuery();
-                                while (rs.next()) {
-                                    income_sum += rs.getInt(1);
-                                    list_incomes.add(rs.getInt(1));
-                                }
-                            }
-                            catch (SQLException | ClassNotFoundException e) {
-                                Log.d("MyLog", e.getMessage() + " " + e.getStackTrace());
-                            }
-                            finally {
-                                try {
-                                    if (conn != null) db.closeConnect(conn);
-                                    if (st != null) st.close();
-                                    if (rs != null) rs.close();
-                                }
-                                catch (SQLException e) {
-                                    Log.d("MyLog", e.getMessage() + " " + e.getStackTrace());
-                                }
-                            }
-                            handler.post(() -> {
-                                fragmentGeneral.setSum(income_sum, 0, 0, list_incomes);
-                            });
-                        }).start();
+                    request_date_first += i + "-" + (i1 + 1) + "-" + i2;
+                    datePicker.setText(day + "-" + month + "-" + i);
+                    setSumOfCategory(1);
 
-
-                    }
+                    MainActivity.date = day + "-" + month + "-" + i;
                 });
 
                 datePickerDialog.show();
+                break;
+            }
+
+            case R.id.all_time_btn: {
+                datePicker.setText("Все время");
+                setSumOfCategory(5);
+                MainActivity.date = "Все время";
+
+
+                break;
             }
         }
+
+        dialog.cancel();
     }
 
     private void setHeightFragment(ScrollView main_fragment, LinearLayout shadow_layout) {
@@ -358,5 +567,329 @@ public class MainActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         }
         super.onDestroy();
+    }
+
+    private void setSumOfCategory(int index) {
+        new Thread(() -> {
+            Connection connection = null;
+            PreparedStatement preparedStatement = null;
+            ResultSet resultSet = null;
+
+            ArrayList<String> names = new ArrayList<>();
+            ArrayList<Integer> amounts = new ArrayList<>();
+            Bundle dateArgs = new Bundle();
+
+            try {
+                connection = db.connect(connection);
+
+                switch (index) {
+                    case 0: {
+                        preparedStatement = connection.prepareStatement(Queries.getSumForRange());
+                        preparedStatement.setInt(1, User.getUser().getID_user());
+                        preparedStatement.setString(2, request_date_first);
+                        preparedStatement.setString(3, request_date_second);
+
+                        resultSet = preparedStatement.executeQuery();
+
+                        setArgsForChangedDate(resultSet, names, amounts, dateArgs);
+                        break;
+                    }
+
+                    case 1: {
+                        preparedStatement = connection.prepareStatement(Queries.getSumForOneDay());
+                        preparedStatement.setInt(1, User.getUser().getID_user());
+                        preparedStatement.setString(2, request_date_first);
+
+                        resultSet = preparedStatement.executeQuery();
+
+                        setArgsForChangedDate(resultSet, names, amounts, dateArgs);
+                        break;
+                    }
+
+                    case 5: {
+                        preparedStatement = connection.prepareStatement(Queries.getSumForAllTime());
+                        preparedStatement.setInt(1, User.getUser().getID_user());
+                        resultSet = preparedStatement.executeQuery();
+
+                        setArgsForChangedDate(resultSet, names, amounts, dateArgs);
+                        break;
+                    }
+                }
+            }
+            catch (SQLException | ClassNotFoundException e) {
+                Log.d("MyLog", e.getMessage());
+                e.getStackTrace();
+            } finally {
+                try {
+                    if (connection != null) db.closeConnect(connection);
+                    if (preparedStatement != null) preparedStatement.close();
+                    if (resultSet != null) resultSet.close();
+                }
+                catch (SQLException e) {
+                    Log.d("MyLog", e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+    }
+
+    private void setArgsForChangedDate(ResultSet resultSet, ArrayList<String> names, ArrayList<Integer> amounts, Bundle dateArgs) throws SQLException {
+        while (resultSet.next()) {
+            amounts.add(resultSet.getInt(2));
+            names.add(resultSet.getString(3));
+        }
+
+        dateArgs.putIntegerArrayList("amounts", amounts);
+        dateArgs.putStringArrayList("names", names);
+
+        getSupportFragmentManager().setFragmentResult("changedDate", dateArgs);
+
+
+        handler.post(() -> {
+            int general_sum = 0;
+            for (Integer amount: amounts) general_sum += amount;
+            total_sum.setText(general_sum + "$");
+        });
+    }
+
+    // --------------------------------------- HISTORY ---------------------------------------------
+    /**
+     * Обработка нажатия на кнопку "история"
+     */
+    private void setOnClickHistoryBtn() {
+        history_button.setOnClickListener(view -> {
+            if (map_of_sub_categories == null) {
+                mainActivity.setMap_of_sub_categories(map_of_sub_categories);
+            }
+
+            shadow_layout.setVisibility(View.GONE);
+            buttons_linear.setVisibility(View.GONE);
+            pieChart_layout.setVisibility(View.GONE);
+            dropDown.setVisibility(View.GONE);
+            datePicker.setVisibility(View.GONE);
+            total_sum.setVisibility(View.GONE);
+            date_picker_shadow.setVisibility(View.GONE);
+            main_fragment.setVisibility(View.GONE);
+
+
+            FragmentHistory fragmentHistory = new FragmentHistory();
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+
+            categories_income = (ArrayList<CategoryPrepare>)this.getIntent().getSerializableExtra("categories_income");
+
+            Bundle args = new Bundle();
+
+            args.putSerializable("categories_income", categories_income);
+            fragmentHistory.setArguments(args);
+
+            transaction.replace(R.id.fragment_layout, fragmentHistory);
+            transaction.detach(fragmentGeneral);
+            transaction.commit();
+        });
+    }
+
+    /**
+     //     * Получение подкатегорий по ID категорий
+     //     * @return
+     //     * @throws ExecutionException
+     //     * @throws InterruptedException
+     //     */
+    private ArrayList<SubCategory> getSubCategories() throws ExecutionException, InterruptedException {
+        ExecutorService es = Executors.newSingleThreadExecutor();
+        Future<ArrayList<SubCategory>> future = es.submit(new getSubCategoriesTask(categories_income));
+
+        es.shutdown();
+        return future.get();
+    }
+
+    /**
+     * Задача получения подкатегорий
+     */
+    private static class getSubCategoriesTask implements Callable<ArrayList<SubCategory>> {
+        private ArrayList<CategoryPrepare> categories_income;
+        private ArrayList<SubCategory> sub_categories = new ArrayList<>();
+
+        private DataBaseHandler dataBaseHandler = DataBaseHandler.getDataBaseHadler();
+        private Connection connection = null;
+        private PreparedStatement preparedStatement = null;
+        private ResultSet resultSet = null;
+
+        public getSubCategoriesTask(ArrayList<CategoryPrepare> list) {
+            this.categories_income = list;
+        }
+
+        @Override
+        public ArrayList<SubCategory> call() throws Exception {
+            try {
+                String part_of_query = "";
+
+                connection = dataBaseHandler.connect(connection);
+
+                for (int i = 0; i < categories_income.size(); i++) {
+                    if (i != categories_income.size() - 1) part_of_query += categories_income.get(i).getId_category() + ",";
+                    else part_of_query += categories_income.get(i).getId_category();
+                }
+
+                if (!part_of_query.isEmpty()) {
+                    preparedStatement = connection.prepareStatement(Queries.getSubCategoriesById(part_of_query));
+                    resultSet = preparedStatement.executeQuery();
+
+                    if (resultSet.isBeforeFirst()) {
+                        while (resultSet.next()) sub_categories.add(new SubCategory(resultSet.getString(1),
+                                resultSet.getString(3), resultSet.getString(2), resultSet.getInt(4)));
+                    }
+                }
+            }
+            catch (SQLException e) {
+                Log.d("MyLog", e.getMessage());
+                e.printStackTrace();
+            }
+            finally {
+                if (connection != null) dataBaseHandler.closeConnect(connection);
+                if (preparedStatement != null) preparedStatement.close();
+                if (resultSet != null) resultSet.close();
+            }
+
+            return sub_categories;
+        }
+    }
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Установка HashMap (id_категории - подкатегории)
+     * 1. Перебирает все подкатегории и запоминает 1ый ID
+     * 2. По этому id делает добавление в промежуточный список
+     * 3. После того, как id меняется, производим добавление в список ключа и списка
+     * @return
+     */
+    private HashMap<Integer, ArrayList<SubCategory>> setHashMap() {
+        HashMap<Integer, ArrayList<SubCategory>> map = new HashMap<>();
+
+        if (sub_categories.size() != 0) {
+            int iterator_id = sub_categories.get(0).getId_category();
+            ArrayList<SubCategory> list = new ArrayList<>();
+            SubCategory s;
+
+            for (int i = 0; i < sub_categories.size(); i++) {
+                s = sub_categories.get(i);
+                int current_id = s.getId_category();
+
+                if (iterator_id == current_id) list.add(s);
+                else {
+                    if (map.containsKey(iterator_id)) {
+                        map.get(iterator_id).add(s);
+                    }
+                    else {
+                        map.put(iterator_id, new ArrayList<>(list));
+                        iterator_id = current_id;
+
+                        list.clear();
+                        list.add(s);
+                    }
+
+                    if (i == sub_categories.size() - 1) map.put(iterator_id, list);
+                }
+
+                if ((iterator_id == current_id) && (i == sub_categories.size() - 1)) map.put(iterator_id, list);
+            }
+        }
+
+        return map;
+    }
+    // ---------------------------------------------------------------------------------------------
+
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Метод получения хэш-таблицы истории ввода
+     * @return
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
+    private HashMap<Date, ArrayList<SubCategory>> get_map_of_history() throws ExecutionException, InterruptedException {
+        map_of_history = new HashMap<>();
+        ExecutorService es = Executors.newSingleThreadExecutor();
+        Future<HashMap<Date, ArrayList<SubCategory>>> future = es.submit(new GetMapOfHistoryTask(map_of_history, categories_income));
+
+        es.shutdown();
+        return future.get();
+    }
+
+    /**
+     * Задача получения истории ввода
+     */
+    private static class GetMapOfHistoryTask implements Callable<HashMap<Date, ArrayList<SubCategory>>> {
+        private HashMap<Date, ArrayList<SubCategory>> map_of_history;
+        private ArrayList<CategoryPrepare> categories_income;
+        private Connection connection = null;
+        private PreparedStatement preparedStatement = null;
+        private ResultSet resultSet = null;
+        private String part_of_query = "";
+        private DataBaseHandler db = DataBaseHandler.getDataBaseHadler();
+        public GetMapOfHistoryTask(HashMap<Date, ArrayList<SubCategory>> map_of_history, ArrayList<CategoryPrepare> categories_income) {
+            this.map_of_history = map_of_history;
+            this.categories_income = categories_income;
+        }
+
+        @Override
+        public HashMap<Date, ArrayList<SubCategory>> call() throws Exception {
+
+            connection = db.connect(connection);
+
+            for (int i = 0; i < categories_income.size(); i++) {
+                if (i != categories_income.size() - 1) part_of_query +=
+                        "\'" + categories_income.get(i).getName_category() + "\',";
+                else part_of_query += "\'" + categories_income.get(i).getName_category() + "\'";
+            }
+
+            if (!part_of_query.isEmpty()) {
+                preparedStatement = connection.prepareStatement(Queries.getHistoryMapIncome(part_of_query));
+                preparedStatement.setInt(1, User.getUser().getID_user());
+
+                resultSet = preparedStatement.executeQuery();
+
+                while (resultSet.next()) {
+
+                    Date key = resultSet.getDate(5);
+                    if (map_of_history.containsKey(key)) {
+                        map_of_history.get(key).add(new SubCategory(resultSet.getString(1), resultSet.getString(3),
+                                resultSet.getString(2), resultSet.getInt(4)));
+                    }
+                    else {
+                        map_of_history.put(key, new ArrayList<>());
+                        map_of_history.get(key).add(new SubCategory(resultSet.getString(1), resultSet.getString(3),
+                                resultSet.getString(2), resultSet.getInt(4)));
+                    }
+                }
+            }
+
+            mainActivity.setMap_of_history(map_of_history);
+            return map_of_history;
+        }
+    }
+    // ---------------------------------------------------------------------------------------------
+
+    public static HashMap<Integer, ArrayList<SubCategory>> getMap_of_sub_categories() {
+        return map_of_sub_categories;
+    }
+
+    public static void setMap_of_sub_categories(HashMap<Integer, ArrayList<SubCategory>> map_of_sub_categories) {
+        MainActivity.map_of_sub_categories = map_of_sub_categories;
+    }
+
+    public void setSub_categories(ArrayList<SubCategory> sub_categories) {
+        this.sub_categories = sub_categories;
+    }
+
+    public static MainActivity getMainActivity() {
+        return mainActivity;
+    }
+
+    public static void setMap_of_history(HashMap<Date, ArrayList<SubCategory>> map_of_history) {
+        MainActivity.map_of_history = map_of_history;
+    }
+
+    public static HashMap<Date, ArrayList<SubCategory>> getMap_of_history() {
+        return map_of_history;
     }
 }
