@@ -14,6 +14,7 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.content.res.AppCompatResources;
@@ -43,6 +44,7 @@ import java.util.concurrent.Future;
 import app.course.DialogAddIncomeCategory;
 import app.course.Queries;
 import app.course.R;
+import app.course.SpacingItemDecorator;
 import app.course.User;
 import app.course.authorization.DataBaseHandler;
 import app.course.category.Category;
@@ -87,6 +89,7 @@ public class FragmentGeneral extends Fragment {
     private PreparedStatement preparedStatement = null;
     private ResultSet resultSet = null;
 
+    private int id_account;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -149,7 +152,7 @@ public class FragmentGeneral extends Fragment {
                     incomes_text.setText(String.valueOf(generalSum));
                 }
 
-//                updatePercent(categories_income);
+                updatePercent(categories_income);
                 categories_income_adapter.notifyDataSetChanged();
             });
                 });
@@ -171,6 +174,7 @@ public class FragmentGeneral extends Fragment {
                         if (MainActivity.date.equals("Все время")) {
                             sum = result.getInt("sum");
                             diff_sum = sum - categories_income_prepare.get(pos).getSum_category();
+                            Log.d("MyLog", diff_sum + " diff_sum");
                             args.putInt("sum", diff_sum);
                             args.putBoolean("action", true);
 
@@ -250,11 +254,13 @@ public class FragmentGeneral extends Fragment {
                     categories_income_adapter.notifyDataSetChanged();
 
                     try {
-                        id_categories.add(updateIdCategories(color, name, id_icon));
+                        id_categories.add(updateIdCategories(color, name, id_icon, id_account));
                     } catch (ExecutionException | InterruptedException e) {
                         Log.d("MyLog", e.getMessage());
                         e.printStackTrace();
                     }
+
+                    Toast.makeText(getContext(), "Добавлено!", Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -264,7 +270,6 @@ public class FragmentGeneral extends Fragment {
             if (category.getSum_category() > 0) sum_of_categories += category.getSum_category();
             else sum_of_categories += category.getSum_category() * (-1);
         }
-        Log.d("MyLog", sum_of_categories + " sum");
 
         for (int i = 0; i < categories_income_prepare.size(); i++) {
             if (sum_of_categories != 0) {
@@ -324,6 +329,14 @@ public class FragmentGeneral extends Fragment {
         id_categories = new ArrayList<>();
 
         fragmentGeneral = new FragmentGeneral(getContext(), getParentFragmentManager());
+
+        try {
+            id_account = fragmentGeneral.getIdAccount();
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         dataBaseHandler = DataBaseHandler.getDataBaseHadler();
 
         icons.add(getResources().getDrawable(R.drawable.ic_bag, getContext().getTheme()));
@@ -374,18 +387,6 @@ public class FragmentGeneral extends Fragment {
 //                setHeightListView(category_income_list);
             }
         }
-
-
-
-//        else {
-//            LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
-//            linearLayoutManager.setOrientation(RecyclerView.VERTICAL);
-//
-//            category_income_recycler.setLayoutManager(linearLayoutManager);
-//            categories_income_adapter = new CategoryAdapter(getActivity(), categories_income, categories_income_prepare,
-//                    id_categories, hash_map_categories, icons, fragmentManager);
-//            category_income_recycler.setAdapter(categories_income_adapter);
-//        }
 
         /**
          * Удаление подкатегории
@@ -444,7 +445,6 @@ public class FragmentGeneral extends Fragment {
                         String query = "DELETE FROM category_income where id_user = " + User.getUser().getID_user() +
                                 " and name_category in (" + removed_names_items +")";
 
-                        Log.d("MyLog", query + " ");
                         connection = dataBaseHandler.connect(connection);
                         preparedStatement = connection.prepareStatement(query);
 
@@ -492,6 +492,8 @@ public class FragmentGeneral extends Fragment {
 
                             new Thread(() -> {
                                 try {
+                                    int id_account = getIdAccount();
+
                                     Connection connection = null;
                                     connection = dataBaseHandler.connect(connection);
                                     PreparedStatement preparedStatement = connection.prepareStatement(Queries.addNewIncomeCategory());
@@ -500,6 +502,7 @@ public class FragmentGeneral extends Fragment {
                                     preparedStatement.setString(3, object_prepare.getName_category());
                                     preparedStatement.setInt(4, object_prepare.getIcon_category());
                                     preparedStatement.setString(5, object_prepare.getBg_color_category());
+                                    preparedStatement.setInt(6, id_account);
 
                                     preparedStatement.executeUpdate();
                                     preparedStatement.clearParameters();
@@ -509,13 +512,13 @@ public class FragmentGeneral extends Fragment {
                                     String values = "VALUES (";
 
                                     query += values;
-                                    Log.d("MyLog", query);
 
                                     preparedStatement = connection.prepareStatement(query);
                                     preparedStatement.executeUpdate();
                                     preparedStatement.clearParameters();
                                 }
-                                catch (ClassNotFoundException | SQLException e) {
+                                catch (ClassNotFoundException | SQLException | ExecutionException |
+                                       InterruptedException e) {
                                     Log.d("MyLog", e.getMessage());
                                     e.printStackTrace();
                                 }
@@ -532,13 +535,20 @@ public class FragmentGeneral extends Fragment {
                         }).show();
                 }
             }).attachToRecyclerView(category_income_recycler);
+
         general_sum.setText(String.valueOf(income_sum - expense_sum));
 
-        Bundle result = new Bundle();
-        result.putInt("sum", income_sum - expense_sum);
-        result.putBoolean("action", true);
 
-        getParentFragmentManager().setFragmentResult("change_diff_sum", result);
+        MainActivity mainActivity = MainActivity.getMainActivity();
+        TextView total_sum = mainActivity.getTotal_sum();
+        total_sum.setText(String.valueOf(income_sum - expense_sum) + "$");
+        mainActivity.setTotal_sum(total_sum);
+//        Bundle result = new Bundle();
+//        result.putInt("sum", income_sum - expense_sum);
+//        result.putBoolean("change_date", false);
+//        result.putBoolean("action", true);
+//
+//        getParentFragmentManager().setFragmentResult("change_diff_sum", result);
     }
 
 
@@ -589,39 +599,14 @@ public class FragmentGeneral extends Fragment {
         listView.setLayoutParams(params);
     }
     // ---------------------------------------------------------------------------------------------
-
-    /**
-     * Метод, устанавливающий суммы для категорий и общую сумму из MainActivity
-     */
-    public void setSum(int income_sum, int expense_sum, int general, ArrayList<Integer> incomes_list) {
-        DecimalFormat df = new DecimalFormat("#.#");
-        int total_sum = 0;
-        double procent = 0.0;
-
-        incomes_text.setText(String.valueOf(income_sum));
-        expense_text.setText(String.valueOf(expense_sum));
-        general_sum.setText(String.valueOf(general));
-
-        for (int i = 0; i < incomes_list.size(); i++) {
-            total_sum += incomes_list.get(i);
-        }
-
-        for (int i = 0; i < incomes_list.size(); i++) {
-            procent = (double) (categories_income.get(i).getSum_category() / total_sum) * 100;
-            categories_income.get(i).setSum_category(incomes_list.get(i));
-            categories_income.get(i).setCategory_procent(df.format(procent));
-        }
-        categories_income_adapter.notifyDataSetChanged();
-    }
-
     /**
      * Метод обновления данных id категорий после добавления
      * @return id категории
      */
-    private int updateIdCategories(String color, String name, int id_icon)
+    private int updateIdCategories(String color, String name, int id_icon, int id_account)
             throws ExecutionException, InterruptedException {
         ExecutorService es = Executors.newSingleThreadExecutor();
-        Future<Integer> future = es.submit(new UpdateIdCategoriesTask(color, name, id_icon));
+        Future<Integer> future = es.submit(new UpdateIdCategoriesTask(color, name, id_icon, id_account));
 
         es.shutdown();
 
@@ -641,11 +626,13 @@ public class FragmentGeneral extends Fragment {
         private String name;
         private int id_icon;
         private int id_category;
+        private int id_account;
 
-        public UpdateIdCategoriesTask(String color, String name, int id_icon) {
+        public UpdateIdCategoriesTask(String color, String name, int id_icon, int id_account) {
             this.color = color;
             this.name = name;
             this.id_icon = id_icon;
+            this.id_account = id_account;
         }
         @Override
         public Integer call() {
@@ -658,6 +645,7 @@ public class FragmentGeneral extends Fragment {
 
                 preparedStatement.setInt(4, id_icon);
                 preparedStatement.setString(5, color);
+                preparedStatement.setInt(6, id_account);
                 preparedStatement.executeUpdate();
 
                 preparedStatement = connection.prepareStatement(Queries.getCategoryIncome());
@@ -672,9 +660,7 @@ public class FragmentGeneral extends Fragment {
             catch (SQLException | ClassNotFoundException e) {
                 Log.d("MyLog", e.getMessage());
                 e.printStackTrace();
-            }
-
-            finally {
+            } finally {
                 try {
                     if (connection != null) dataBaseHandler.closeConnect(connection);
                     if (preparedStatement != null) preparedStatement.close();
@@ -690,6 +676,52 @@ public class FragmentGeneral extends Fragment {
         }
     }
 
+    /**
+     * Получение ID_account
+     */
+    public int getIdAccount() throws ExecutionException, InterruptedException {
+        ExecutorService es = Executors.newSingleThreadExecutor();
+        Future<Integer> future = es.submit(new GetIdAccountTask());
+
+        es.shutdown();
+        return future.get();
+    }
+
+    private class GetIdAccountTask implements Callable<Integer> {
+        private int id_account;
+        private MainActivity mainActivity = MainActivity.getMainActivity();
+        private String name = (String) mainActivity.getDropDown().getSelectedItem();
+        @Override
+        public Integer call() throws Exception {
+            DataBaseHandler db = DataBaseHandler.getDataBaseHadler();
+            Connection conn = null;
+            PreparedStatement st = null;
+            ResultSet rs = null;
+
+            try {
+                conn = db.connect(conn);
+                st = conn.prepareStatement(Queries.getIdAccount());
+                st.setInt(1, User.getUser().getID_user());
+                st.setString(2, mainActivity.getDropDown().getSelectedItem().toString());
+
+                rs = st.executeQuery();
+                while (rs.next()) {
+                    id_account = rs.getInt(1);
+                    Log.d("MyLog", "result");
+                }
+            }
+            catch (SQLException | ClassNotFoundException e) {
+                Log.d("MyLog", e.getMessage());
+            }
+            finally {
+                if (conn != null) db.closeConnect(conn);
+                if (st != null) st.close();
+                if (rs != null) rs.close();
+            }
+
+            return id_account;
+        }
+    }
 
     /**
      * При уничтожении активтити выполняется запрос на удаление выбранных категорий из БД

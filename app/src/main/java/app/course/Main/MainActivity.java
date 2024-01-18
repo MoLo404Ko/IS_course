@@ -3,6 +3,7 @@ package app.course.Main;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 
 import android.app.DatePickerDialog;
@@ -38,9 +39,14 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -56,8 +62,10 @@ import app.course.R;
 import app.course.User;
 import app.course.add_new_item.DialogAddNewItem;
 import app.course.authorization.DataBaseHandler;
+import app.course.category.Category;
 import app.course.category.CategoryPrepare;
 import app.course.history.FragmentHistory;
+import app.course.income.FragmentIncome;
 import app.course.menu_fragments.AmountsFragment;
 import app.course.menu_fragments.CategoryFragment;
 import app.course.menu_fragments.HomeFragment;
@@ -66,6 +74,7 @@ import app.course.sub_category.SubCategory;
 
 
 public class MainActivity extends AppCompatActivity {
+    private DecimalFormat df = new DecimalFormat("#.#");
     private static MainActivity mainActivity = new MainActivity();
     private Handler handler;
     private int income_sum;
@@ -86,10 +95,14 @@ public class MainActivity extends AppCompatActivity {
 
     private FragmentTransaction fragmentTransaction = null;
     private FragmentGeneral fragmentGeneral = null;
+    private FragmentIncome fragmentIncome = null;
+
     private Button datePicker;
     private ImageButton add_button, minus_button, history_button;
     private Spinner dropDown;
     private TextView total_sum;
+    private TextView income_tv;
+    private TextView general_tv;
 
     private BottomNavigationView bottomNavigationView;
 
@@ -113,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<SubCategory>[] save_array = new ArrayList[1];
 
     private static HashMap<Integer, ArrayList<SubCategory>> map_of_sub_categories;
-    private static HashMap<Date, ArrayList<SubCategory>> map_of_history;
+    private static HashMap<LocalDate, ArrayList<SubCategory>> map_of_history;
 
     private NavigationBarView.OnItemSelectedListener listener_nav = item -> {
         switch (item.getItemId()) {
@@ -158,16 +171,6 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Нажмите еще раз для выхода", Toast.LENGTH_SHORT).show();
             start_time = System.currentTimeMillis();
             press_count = 2;
-        }
-
-        for (Integer key: map_of_sub_categories.keySet()) {
-            Log.d("MyLog", key + " key");
-            if (map_of_sub_categories.get(key) != null) {
-                for (int i = 0; i < map_of_sub_categories.get(key).size(); i++) {
-                    Log.d("MyLog", map_of_sub_categories.get(key).get(i).getName());
-                }
-            }
-            Log.d("MyLog", "------------------------------------");
         }
 
         return true;
@@ -226,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
             }
             else current_sum = diff_sum;
 
+            Log.d("MyLog", current_sum + " ");
             total_sum.setText(current_sum + "$");
                 });
 
@@ -255,7 +259,6 @@ public class MainActivity extends AppCompatActivity {
                     else {
                         // тут происходит магия, я не понимаю почему, но оно работает
                         // скорее всего в список обратно добавляется item ,но не здесь и я не знаю где :(
-                        Log.d("MyLog", "i'm entry");
 //                        Objects.requireNonNull(map_of_sub_categories.get(key)).add(object);
                     }
                 }
@@ -279,10 +282,10 @@ public class MainActivity extends AppCompatActivity {
 
         getSupportFragmentManager().setFragmentResultListener("addNewItemHistory", this,
                 (requestKey, result) -> {
-                    LocalDate date = LocalDate.now();
-                    Date key = Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
-
                     SubCategory object = (SubCategory) result.getParcelable("object");
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+
+                    LocalDate key = LocalDate.parse(object.getDate_last_entry(), formatter);
 
                     if (map_of_history.containsKey(key)) {
                         Log.d("MyLog", "hasKey");
@@ -290,14 +293,9 @@ public class MainActivity extends AppCompatActivity {
                     }
                     else {
                         Log.d("MyLog", "hasn'tKey");
-                        map_of_history.put(key, new ArrayList<SubCategory>());
-                        Objects.requireNonNull(map_of_history.get(key)).add(object);
-                    }
-
-                    for (Date k: map_of_history.keySet()) {
-                        for (int i = 0; i < map_of_history.get(k).size(); i++) {
-                            Log.d("MyLog", map_of_history.get(k).get(i).getName() + " item");
-                        }
+                        ArrayList<SubCategory> list = new ArrayList<>();
+                        list.add(object);
+                        map_of_history.put(key, list);
                     }
 
                     mainActivity.setMap_of_history(map_of_history);
@@ -338,7 +336,9 @@ public class MainActivity extends AppCompatActivity {
         handler = new Handler(Looper.getMainLooper());
         add_button = findViewById(R.id.add_btn);
         history_button = findViewById(R.id.history_btn);
+
         total_sum = findViewById(R.id.total_sum);
+        mainActivity.setTotal_sum(total_sum);
 
         sub_fragment = findViewById(R.id.sub_fragment);
         extras = getIntent().getExtras();
@@ -360,6 +360,9 @@ public class MainActivity extends AppCompatActivity {
 
         datePicker.setText(R.string.all_time_date);
         MainActivity.date = datePicker.getText().toString();
+
+        income_tv = findViewById(R.id.income_tv);
+        general_tv = findViewById(R.id.general_tv);
 
         bottomNavigationView = findViewById(R.id.bottomNav);
         bottomNavigationView.setOnItemSelectedListener(listener_nav);
@@ -389,7 +392,8 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction.replace(R.id.main_fragment, fragmentGeneral);
         fragmentTransaction.commit();
 
-        setPieChart(buttons_linear, shadow_layout);
+        clickLinearBtns();
+        setPieChart();
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -406,7 +410,9 @@ public class MainActivity extends AppCompatActivity {
                 android.R.layout.simple_list_item_1, amounts);
 
         adapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item);
+
         dropDown.setAdapter(adapter);
+        mainActivity.setDropDown(dropDown);
     }
     // ---------------------------------------------------------------------------------------------
 
@@ -505,7 +511,7 @@ public class MainActivity extends AppCompatActivity {
         shadow_layout.getLayoutParams().height = (int)(displayMetrics.heightPixels / 2.75 - 30);
     }
 
-    private void setPieChart(View firstView, View secondView) {
+    private void setPieChart() {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
@@ -538,8 +544,45 @@ public class MainActivity extends AppCompatActivity {
 
     private void addSlices(PieChart pieChart) {
         pieChart.setInnerPadding(65f);
-        pieChart.addPieSlice(new PieModel("", 100,
-                getResources().getColor(R.color.blue_general, getTheme())));
+
+//        if (categories_income.size() == 0) {
+            pieChart.addPieSlice(new PieModel("", 100,
+                    getResources().getColor(R.color.blue_general, getTheme())));
+//        }
+//
+//        else {
+//            for (CategoryPrepare category: categories_income) {
+//                int color = Color.parseColor(category.getBg_color_category());
+//                Float percent = Float.parseFloat(category.getCategory_procent().replace(",", "."));
+//                pieChart.addPieSlice(new PieModel("", percent,
+//                        color));
+//            }
+//        }
+    }
+
+    public void updatePieChart(boolean action)
+    {
+        pieChart.clearChart();
+    }
+
+    private void updatePercent(ArrayList<CategoryPrepare> categories_income) {
+        int sum_of_categories = 0;
+        for (CategoryPrepare category: categories_income) {
+            if (category.getSum_category() > 0) sum_of_categories += category.getSum_category();
+            else sum_of_categories += category.getSum_category() * (-1);
+        }
+
+        for (int i = 0; i < categories_income.size(); i++) {
+            if (sum_of_categories != 0) {
+                double percent;
+                percent = (double)categories_income.get(i).getSum_category() / sum_of_categories * 100;
+
+                categories_income.get(i).setCategory_procent(df.format(percent));
+            }
+            else {
+                categories_income.get(i).setCategory_procent("0");
+            }
+        }
     }
 
     @Override
@@ -614,6 +657,7 @@ public class MainActivity extends AppCompatActivity {
                         setArgsForChangedDate(resultSet, names, amounts, dateArgs);
                         break;
                     }
+
                 }
             }
             catch (SQLException | ClassNotFoundException e) {
@@ -636,7 +680,7 @@ public class MainActivity extends AppCompatActivity {
     private void setArgsForChangedDate(ResultSet resultSet, ArrayList<String> names, ArrayList<Integer> amounts, Bundle dateArgs) throws SQLException {
         while (resultSet.next()) {
             amounts.add(resultSet.getInt(2));
-            names.add(resultSet.getString(3));
+            names.add(resultSet.getString(1));
         }
 
         dateArgs.putIntegerArrayList("amounts", amounts);
@@ -806,10 +850,10 @@ public class MainActivity extends AppCompatActivity {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    private HashMap<Date, ArrayList<SubCategory>> get_map_of_history() throws ExecutionException, InterruptedException {
+    private HashMap<LocalDate, ArrayList<SubCategory>> get_map_of_history() throws ExecutionException, InterruptedException {
         map_of_history = new HashMap<>();
         ExecutorService es = Executors.newSingleThreadExecutor();
-        Future<HashMap<Date, ArrayList<SubCategory>>> future = es.submit(new GetMapOfHistoryTask(map_of_history, categories_income));
+        Future<HashMap<LocalDate, ArrayList<SubCategory>>> future = es.submit(new GetMapOfHistoryTask(map_of_history, categories_income));
 
         es.shutdown();
         return future.get();
@@ -818,21 +862,21 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Задача получения истории ввода
      */
-    private static class GetMapOfHistoryTask implements Callable<HashMap<Date, ArrayList<SubCategory>>> {
-        private HashMap<Date, ArrayList<SubCategory>> map_of_history;
+    private static class GetMapOfHistoryTask implements Callable<HashMap<LocalDate, ArrayList<SubCategory>>> {
+        private HashMap<LocalDate, ArrayList<SubCategory>> map_of_history;
         private ArrayList<CategoryPrepare> categories_income;
         private Connection connection = null;
         private PreparedStatement preparedStatement = null;
         private ResultSet resultSet = null;
         private String part_of_query = "";
         private DataBaseHandler db = DataBaseHandler.getDataBaseHadler();
-        public GetMapOfHistoryTask(HashMap<Date, ArrayList<SubCategory>> map_of_history, ArrayList<CategoryPrepare> categories_income) {
+        public GetMapOfHistoryTask(HashMap<LocalDate, ArrayList<SubCategory>> map_of_history, ArrayList<CategoryPrepare> categories_income) {
             this.map_of_history = map_of_history;
             this.categories_income = categories_income;
         }
 
         @Override
-        public HashMap<Date, ArrayList<SubCategory>> call() throws Exception {
+        public HashMap<LocalDate, ArrayList<SubCategory>> call() throws Exception {
 
             connection = db.connect(connection);
 
@@ -850,7 +894,7 @@ public class MainActivity extends AppCompatActivity {
 
                 while (resultSet.next()) {
 
-                    Date key = resultSet.getDate(5);
+                    LocalDate key = resultSet.getDate(5).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
                     if (map_of_history.containsKey(key)) {
                         map_of_history.get(key).add(new SubCategory(resultSet.getString(1), resultSet.getString(3),
                                 resultSet.getString(2), resultSet.getInt(4)));
@@ -869,6 +913,58 @@ public class MainActivity extends AppCompatActivity {
     }
     // ---------------------------------------------------------------------------------------------
 
+    /**
+     * Обработка нажатия на кнопку доходы/расходы/общее
+     */
+    private void clickLinearBtns() {
+        income_tv.setOnClickListener(new View.OnClickListener() {
+            FragmentTransaction ft = null;
+
+            @Override
+            public void onClick(View view) {
+                fragmentIncome = new FragmentIncome();
+                ft = getSupportFragmentManager().beginTransaction();
+                ft.replace(R.id.main_fragment, fragmentIncome);
+
+                if (fragmentGeneral != null) ft.detach(fragmentGeneral);
+
+                Bundle args = new Bundle();
+
+                args.putSerializable("categories_income", categories_income);
+                args.putIntegerArrayList("id_categories", id_categories);
+
+                fragmentIncome.setArguments(args);
+
+                general_tv.setTextColor(getResources().getColor(R.color.black, getApplicationContext().getTheme()));
+                income_tv.setTextColor(getResources().getColor(R.color.blue_general, getApplicationContext().getTheme()));
+                ft.commit();
+            }
+        });
+
+        general_tv.setOnClickListener(new View.OnClickListener() {
+            FragmentTransaction ft = null;
+            @Override
+            public void onClick(View view) {
+                fragmentGeneral = new FragmentGeneral(getBaseContext(), getSupportFragmentManager());
+                ft = getSupportFragmentManager().beginTransaction();
+                Bundle args = new Bundle();
+
+                args.putSerializable("categories_income", categories_income);
+                args.putSerializable("categories_expense", categories_expense);
+                args.putIntegerArrayList("id_categories", id_categories);
+                fragmentGeneral.setArguments(args);
+
+                ft.replace(R.id.main_fragment, fragmentGeneral);
+
+                if (fragmentIncome != null) ft.detach(fragmentIncome);
+
+                income_tv.setTextColor(getResources().getColor(R.color.black, getApplicationContext().getTheme()));
+                general_tv.setTextColor(getResources().getColor(R.color.blue_general, getApplicationContext().getTheme()));
+                ft.commit();
+            }
+        });
+    }
+
     public static HashMap<Integer, ArrayList<SubCategory>> getMap_of_sub_categories() {
         return map_of_sub_categories;
     }
@@ -885,11 +981,27 @@ public class MainActivity extends AppCompatActivity {
         return mainActivity;
     }
 
-    public static void setMap_of_history(HashMap<Date, ArrayList<SubCategory>> map_of_history) {
+    public static void setMap_of_history(HashMap<LocalDate, ArrayList<SubCategory>> map_of_history) {
         MainActivity.map_of_history = map_of_history;
     }
 
-    public static HashMap<Date, ArrayList<SubCategory>> getMap_of_history() {
+    public static HashMap<LocalDate, ArrayList<SubCategory>> getMap_of_history() {
         return map_of_history;
+    }
+
+    public Spinner getDropDown() {
+        return dropDown;
+    }
+
+    public void setDropDown(Spinner dropDown) {
+        this.dropDown = dropDown;
+    }
+
+    public TextView getTotal_sum() {
+        return total_sum;
+    }
+
+    public void setTotal_sum(TextView total_sum) {
+        this.total_sum = total_sum;
     }
 }

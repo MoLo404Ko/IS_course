@@ -76,6 +76,7 @@
         app:layout_constraintRight_toRightOf="@id/password">
 
         <CheckBox
+            android:id="@+id/check_box"
             android:layout_width="17dp"
             android:layout_height="17dp"
             android:buttonTint="@color/white"

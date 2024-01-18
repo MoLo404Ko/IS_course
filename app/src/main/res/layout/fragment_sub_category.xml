@@ -129,8 +129,8 @@
 
     <ImageButton
         android:id="@+id/btn_close_sub_category"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
+        android:layout_width="23dp"
+        android:layout_height="23dp"
 
         android:background="@drawable/ic_cross"
 
@@ -141,12 +141,58 @@
         app:layout_constraintTop_toTopOf="parent">
     </ImageButton>
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:layout_marginLeft="25dp"
+        android:layout_marginRight="25dp"
+
+        app:layout_constraintTop_toBottomOf="@id/sub_add_btn"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/name_add_dialog"
+
+            style="@style/BoldFontBlue_14"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+        </TextView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sum_add_dialog"
+
+            style="@style/BoldFontBlue_14"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+        </TextView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/date_add_dialog"
+
+            style="@style/BoldFontBlue_14"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+        </TextView>
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/sub_category_recycler"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-
-        android:layout_marginTop="10dp"
 
         android:divider="@color/transparent"
         android:dividerHeight="7dp"
@@ -155,7 +201,7 @@
         android:listSelector="@color/transparent"
         android:scrollbars="vertical"
 
-        app:layout_constraintTop_toBottomOf="@id/sub_add_btn"
+        app:layout_constraintTop_toBottomOf="@id/header"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent">
     </androidx.recyclerview.widget.RecyclerView>

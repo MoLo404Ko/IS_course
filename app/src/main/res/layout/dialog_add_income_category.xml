@@ -8,8 +8,8 @@
 
     <ImageButton
         android:id="@+id/btn_close_dialog_add_category"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
+        android:layout_width="23dp"
+        android:layout_height="23dp"
 
         android:background="@drawable/ic_cross"
 
@@ -124,71 +124,60 @@
 
         <ImageButton
             android:id="@+id/icon_1"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
 
-            android:background="@drawable/ic_1">
+            android:background="@drawable/ic_bag">
         </ImageButton>
 
         <ImageButton
             android:id="@+id/icon_2"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
 
             android:layout_marginLeft="6dp"
 
-            android:background="@drawable/ic_2">
+            android:background="@drawable/ic_basket">
         </ImageButton>
 
         <ImageButton
             android:id="@+id/icon_3"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
 
             android:layout_marginLeft="6dp"
 
-            android:background="@drawable/ic_3">
+            android:background="@drawable/ic_grow">
         </ImageButton>
 
         <ImageButton
             android:id="@+id/icon_4"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
 
             android:layout_marginLeft="6dp"
 
-            android:background="@drawable/ic_1">
+            android:background="@drawable/ic_bag">
         </ImageButton>
 
         <ImageButton
             android:id="@+id/icon_5"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
 
             android:layout_marginLeft="6dp"
 
-            android:background="@drawable/ic_2">
+            android:background="@drawable/ic_basket">
         </ImageButton>
 
         <ImageButton
             android:id="@+id/icon_6"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="35dp"
+            android:layout_height="35dp"
 
             android:layout_marginLeft="6dp"
 
-            android:background="@drawable/ic_3">
-        </ImageButton>
-
-        <ImageButton
-            android:id="@+id/icon_7"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-
-            android:layout_gravity="center"
-            android:layout_marginLeft="10dp"
-
-            android:background="@drawable/ic_arrow">
+            android:background="@drawable/ic_grow">
         </ImageButton>
     </androidx.appcompat.widget.LinearLayoutCompat>
 

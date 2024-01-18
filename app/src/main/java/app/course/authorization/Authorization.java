@@ -3,6 +3,7 @@ package app.course.authorization;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -13,6 +14,7 @@ import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.AnimationSet;
 import android.view.animation.TranslateAnimation;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -45,6 +47,8 @@ public class Authorization extends AppCompatActivity {
     private TextView forgot_password_tv, reg_btn_tv,  btn_without_login_tv;
     private Button btn_entry;
 
+    private CheckBox check_box;
+    private SharedPreferences sPref = null;
     private ExecutorService executorService = null;
     private Handler handler = null;
 
@@ -167,6 +171,8 @@ public class Authorization extends AppCompatActivity {
                                                         intent.putExtra("categories_expense", categories_expense);
                                                         intent.putExtra("id_categories", id_categories);
 
+                                                        if (check_box.isChecked()) savedData(true);
+                                                        else savedData(false);
 
                                                         startActivity(intent);
                                                         finish();
@@ -236,6 +242,9 @@ public class Authorization extends AppCompatActivity {
     }
 
     private void init() {
+        check_box = findViewById(R.id.check_box);
+
+
         amounts = new ArrayList<>();
         categories_income = new ArrayList<>();
         categories_expense = new ArrayList<>();
@@ -259,6 +268,8 @@ public class Authorization extends AppCompatActivity {
         reg_btn_tv = findViewById(R.id.reg_btn);
         btn_entry = findViewById(R.id.BtnAuthReg);
         btn_without_login_tv = findViewById(R.id.btn_without_login);
+
+        loadData();
 
         getSupportActionBar().hide();
     }
@@ -356,6 +367,34 @@ public class Authorization extends AppCompatActivity {
             if (!isFill) {
                 amounts.add("Основной счет");
 
+                new Thread(() -> {
+                    DataBaseHandler dataBaseHandler = DataBaseHandler.getDataBaseHadler();
+                    Connection conn = null;
+                    PreparedStatement st = null;
+                    try {
+                        conn = dataBaseHandler.connect(conn);
+
+                        st = conn.prepareStatement(Queries.addNewAccount());
+                        st.setInt(1, User.getUser().getID_user());
+                        st.setString(2, "Основной счет");
+                        st.setDouble(3, 0.0);
+                        st.setInt(4, 1);
+
+                        st.executeUpdate();
+                    } catch (SQLException | ClassNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                    finally {
+                        try {
+                            if (conn != null) dataBaseHandler.closeConnect(conn);
+                            if (st != null) st.close();
+                        }
+                        catch (SQLException e) {
+                            Log.d("MyLog", e.getMessage());
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
 //                statement = connection.prepareStatement(Queries.setDefaultAmounts());
 //                statement.setInt(1, User.getUser().getID_user());
 //                statement.setString(2, "Основной счет");
@@ -498,6 +537,41 @@ public class Authorization extends AppCompatActivity {
     }
     // ---------------------------------------------------------------------------------------------
 
+    /**
+     * Запоминание данных при нажатии чек-бокса
+     */
+    private void savedData(boolean isChecked) {
+        sPref = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor ed = sPref.edit();
+        if (isChecked) {
+            ed.putString("login", login_field.getText().toString());
+            ed.putString("password", password_field.getText().toString());
+        }
+        else {
+            ed.putString("login", "");
+            ed.putString("password", "");
+        }
+
+        ed.commit();
+    }
+
+    /**
+     * Загрузка данных логина и пароля при повторном входе
+     */
+
+    private void loadData() {
+        sPref = getPreferences(MODE_PRIVATE);
+        String login = sPref.getString("login", "");
+        String password = sPref.getString("password", "");
+
+        Log.d("MyLog", login);
+        if (!login.isEmpty() && !password.isEmpty()) {
+            login_field.setText(login);
+            password_field.setText(password);
+            check_box.setChecked(true);
+        }
+    }
+    // ---------------------------------------------------------------------------------------------
 
     @Override
     protected void onDestroy() {

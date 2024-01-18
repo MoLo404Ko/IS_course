@@ -49,7 +49,7 @@
                 android:layout_marginRight="115dp"
                 android:textColor="@color/black"
 
-                app:layout_constraintRight_toRightOf="parent"
+                app:layout_constraintLeft_toRightOf="@id/sub_category_name"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent">
 

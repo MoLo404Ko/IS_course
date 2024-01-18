@@ -50,10 +50,13 @@ public class DialogAddIncomeCategory extends DialogFragment {
     private ImageButton btn_close_dialog_add_category;
     private ArrayList<String> colors;
     private ArrayList<String> names;
+    private ArrayList<RelativeLayout> layouts;
 
     private boolean isNamed = false;
     private boolean hasIcon = false;
     private boolean hasColor = false;
+    private boolean prevColor = false;
+    private int prevPos = 0;
 
     private ColorAdapter colorAdapter;
 
@@ -112,25 +115,6 @@ public class DialogAddIncomeCategory extends DialogFragment {
             args.putIntegerArrayList("id_categories", id_categories);
             args.putStringArrayList("names", new_names);
             getParentFragmentManager().setFragmentResult("update_id_categories", args);
-//            int id_new_category;
-
-//            try {
-//                if (!name_add_category_income_edit.getText().toString().isEmpty()) {
-//                    id_new_category = getIdNewCategory(name_add_category_income_edit.getText().toString());
-//                    Log.d("MyLog", id_new_category + " key_dialog");
-//                    Bundle args = new Bundle();
-//                    args.putInt("key", id_new_category);
-//                    args.putBoolean("isSubCategory", false);
-//                    args.putBoolean("remove", false);
-//
-//                    Log.d("MyLog", "w");
-//                    getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", args);
-//                    Log.d("MyLog", "d");
-//                }
-//            }
-//            catch (ExecutionException | InterruptedException e) {
-//                throw new RuntimeException(e);
-//            }
 
             dismiss();
         });
@@ -148,7 +132,8 @@ public class DialogAddIncomeCategory extends DialogFragment {
         linearLayoutManager.setOrientation(RecyclerView.HORIZONTAL);
 
         color_layout.setLayoutManager(linearLayoutManager);
-        color_layout.setHasFixedSize(true);
+        SpacingItemDecorator spacingItemDecorator = new SpacingItemDecorator(10);
+        color_layout.addItemDecoration(spacingItemDecorator);
 
         no_color = view.findViewById(R.id.no_color);
 
@@ -159,6 +144,7 @@ public class DialogAddIncomeCategory extends DialogFragment {
         colors.add("#EE9797");
         colors.add("#D491DF");
         colors.add("#6079FB");
+
 
         colorAdapter = new ColorAdapter(colors, getActivity());
         color_layout.setAdapter(colorAdapter);
@@ -204,9 +190,6 @@ public class DialogAddIncomeCategory extends DialogFragment {
             if (name_add_category_income_edit.getText().toString().length() > 20) {
                 Toast.makeText(getContext(), "Длина названия не должна превышать 20 символов!",
                         Toast.LENGTH_SHORT).show();
-                name_add_category_income_edit.setBackground(getResources().getDrawable(R.drawable.shape_edit_text_error,
-                        getContext().getTheme()));
-                Authorization.moveAnim(name_add_category_income_edit);
                 isNamed = false;
             }
 
@@ -297,13 +280,23 @@ public class DialogAddIncomeCategory extends DialogFragment {
                 else part_of_query += "\'" + names.get(i) + "\'";
             }
 
-            connection = dataBaseHandler.connect(connection);
-            preparedStatement = connection.prepareStatement(Queries.getNewIdCategories(part_of_query));
-            preparedStatement.setInt(1, User.getUser().getID_user());
+            try {
+                connection = dataBaseHandler.connect(connection);
+                preparedStatement = connection.prepareStatement(Queries.getNewIdCategories(part_of_query));
+                preparedStatement.setInt(1, User.getUser().getID_user());
 
-            resultSet = preparedStatement.executeQuery();
+                resultSet = preparedStatement.executeQuery();
 
-            while (resultSet.next()) id_categories.add(resultSet.getInt(1));
+                while (resultSet.next()) id_categories.add(resultSet.getInt(1));
+            }
+            catch (SQLException e ) {
+                Log.d("MyLog", e.getMessage());
+            }
+            finally {
+                if (connection != null) dataBaseHandler.closeConnect(connection);
+                if (preparedStatement != null) preparedStatement.close();
+                if (resultSet != null) resultSet.close();
+            }
 
             return id_categories;
         }
@@ -327,5 +320,30 @@ public class DialogAddIncomeCategory extends DialogFragment {
 
     public void setHasColor(boolean hasColor) {
         this.hasColor = hasColor;
+    }
+
+    public boolean getPrevColor() {
+        return prevColor;
+    }
+
+    public void setPrevColor(boolean prevColor) {
+        this.prevColor = prevColor;
+    }
+
+
+    public int getPrevPos() {
+        return prevPos;
+    }
+
+    public void setPrevPos(int prevPos) {
+        this.prevPos = prevPos;
+    }
+
+    public ColorAdapter getColorAdapter() {
+        return colorAdapter;
+    }
+
+    public void setColorAdapter(ColorAdapter colorAdapter) {
+        this.colorAdapter = colorAdapter;
     }
 }

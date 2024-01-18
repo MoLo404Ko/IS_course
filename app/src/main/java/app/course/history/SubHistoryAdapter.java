@@ -11,6 +11,7 @@ import androidx.annotation.NonNull;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -23,13 +24,13 @@ import app.course.sub_category.SubCategory;
 
 public class SubHistoryAdapter extends RecyclerView.Adapter<SubHistoryAdapter.MyViewHolder> {
     private Context context;
-    private ArrayList<Date> key_set;
+    private ArrayList<LocalDate> key_set;
     private ArrayList<ArrayList<SubCategory>> big_list;
     private int index = 0;
     private int sub_index = 0;
     private int general_size;
 
-    public SubHistoryAdapter(Context context, ArrayList<Date> key_set,
+    public SubHistoryAdapter(Context context, ArrayList<LocalDate> key_set,
                              ArrayList<ArrayList<SubCategory>> big_list, int general_size) {
         this.context = context;
         this.key_set = key_set;

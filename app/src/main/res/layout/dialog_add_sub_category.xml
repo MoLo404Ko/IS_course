@@ -6,8 +6,8 @@
 
     <ImageButton
         android:id="@+id/btn_close_dialog_add_sub_category"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
+        android:layout_width="23dp"
+        android:layout_height="23dp"
 
         android:layout_marginTop="17dp"
         android:layout_marginRight="10dp"
@@ -54,98 +54,6 @@
         app:layout_constraintRight_toRightOf="parent">
     </EditText>
 
-    <androidx.appcompat.widget.LinearLayoutCompat
-        android:id="@+id/sum_and_date_layout_add_dialog"
-        android:layout_width="268dp"
-        android:layout_height="wrap_content"
-        android:weightSum="2"
-
-        android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"
-
-        android:layout_marginTop="15dp"
-
-        app:layout_constraintTop_toBottomOf="@id/name_add_sub_category_edit"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent">
-
-        <TextView
-            android:id="@+id/sum_add_dialog"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-
-            android:layout_weight="1"
-            android:text="@string/sum_add_dialog"
-            style="@style/boldFont_16">
-        </TextView>
-
-        <TextView
-            android:id="@+id/date_add_dialog"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/date_add_dialog"
-            style="@style/boldFont_16">
-
-        </TextView>
-    </androidx.appcompat.widget.LinearLayoutCompat>
-
-    <androidx.appcompat.widget.LinearLayoutCompat
-        android:id="@+id/sum_and_date_layout_edit_add_dialog"
-        android:layout_width="266dp"
-        android:layout_height="wrap_content"
-
-        app:layout_constraintTop_toBottomOf="@id/sum_and_date_layout_add_dialog"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent">
-
-        <EditText
-            android:id="@+id/sum_edit_text_add_dialog"
-            android:layout_width="128dp"
-            android:layout_height="40dp"
-
-            style="@style/edit_text_dialog_add"
-            android:background="@drawable/shape_edit_text_add_dialog">
-        </EditText>
-
-
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginLeft="10dp">
-
-                <EditText
-                    android:id="@+id/date_edit_text_add_dialog"
-                    style="@style/edit_text_dialog_add"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-
-                    android:focusable="false"
-                    android:background="@drawable/shape_edit_text_add_dialog"
-
-                    app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
-                </EditText>
-
-                <androidx.appcompat.widget.AppCompatImageView
-                    android:id="@+id/sub_category_date_btn"
-                    android:layout_width="25dp"
-                    android:layout_height="25dp"
-
-                    android:clickable="true"
-                    android:src="@drawable/ic_date"
-
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintRight_toRightOf="parent"
-                    android:layout_marginRight="5dp">
-
-                </androidx.appcompat.widget.AppCompatImageView>
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-    </androidx.appcompat.widget.LinearLayoutCompat>
-
     <Button
         android:id="@+id/add_sub_category_btn"
         android:layout_width="137dp"
@@ -159,7 +67,7 @@
         android:fontFamily="@font/rubik_medium"
 
 
-        app:layout_constraintTop_toBottomOf="@id/sum_and_date_layout_edit_add_dialog"
+        app:layout_constraintTop_toBottomOf="@id/name_add_sub_category_edit"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">

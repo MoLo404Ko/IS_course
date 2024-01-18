@@ -83,6 +83,7 @@ public class Registration extends AppCompatActivity {
                 executorService = Executors.newSingleThreadExecutor();
                 executorService.execute(() -> {
                     try {
+                        conn = dataBaseHandler.connect(conn);
                         statement = conn.prepareStatement(Queries.getLogin());
                         statement.setString(1, login_field.getText().toString());
                         rs = statement.executeQuery();
@@ -90,7 +91,6 @@ public class Registration extends AppCompatActivity {
 
                         handler.post(() -> {
                             try {
-
                                 if (login_field.getText().toString().isEmpty()) errorField("login_field", false, login_field);
                                 else {
                                     if ((Patterns.EMAIL_ADDRESS.matcher(login_field.getText().toString()).matches() ||
@@ -101,10 +101,12 @@ public class Registration extends AppCompatActivity {
                                             errorField("login_field", false, login_field);
                                             Toast.makeText(this, "Пользователь с таким логином уже существует",
                                                     Toast.LENGTH_SHORT).show();
+                                            dataBaseHandler.closeConnect(conn);
                                         }
                                         else {
                                             isExist = false;
                                             errorField("login_field", true, login_field);
+                                            dataBaseHandler.closeConnect(conn);
                                         }
 
                                     }
@@ -145,6 +147,7 @@ public class Registration extends AppCompatActivity {
                                                 HashPassword hp = new HashPassword(password_field.getText().toString());
                                                 String password = hp.getHash();
 
+                                                conn = dataBaseHandler.connect(conn);
                                                 statement = conn.prepareStatement(Queries.newUser());
                                                 statement.setString(1, name_field.getText().toString());
                                                 statement.setString(2, login_field.getText().toString());
@@ -152,7 +155,7 @@ public class Registration extends AppCompatActivity {
                                                 statement.executeUpdate();
                                             }
                                         } catch (SQLException | NoSuchAlgorithmException
-                                                 | InvalidKeySpecException e) {
+                                                 | InvalidKeySpecException | ClassNotFoundException e) {
                                             throw new RuntimeException(e);
                                         }
                                     }).start();
@@ -167,6 +170,8 @@ public class Registration extends AppCompatActivity {
                             }
                         });
                     } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    } catch (ClassNotFoundException e) {
                         throw new RuntimeException(e);
                     }
                 });
@@ -185,15 +190,6 @@ public class Registration extends AppCompatActivity {
 
         dataBaseHandler = DataBaseHandler.getDataBaseHadler();
         handler = new Handler(Looper.getMainLooper());
-
-        new Thread(() -> {
-            try {
-                conn = dataBaseHandler.connect(conn);
-            }
-            catch (ClassNotFoundException | SQLException e) {
-                e.getMessage();
-            }
-        }).start();
 
         getSupportActionBar().hide();
     }

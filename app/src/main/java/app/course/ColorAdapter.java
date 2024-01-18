@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.recyclerview.widget.RecyclerView;
@@ -21,6 +22,9 @@ import java.util.ArrayList;
 public class ColorAdapter extends RecyclerView.Adapter<ColorAdapter.MyViewHolder> {
     private ArrayList<String> colors;
     private Context context;
+    private DialogAddIncomeCategory dialogAddIncomeCategory = DialogAddIncomeCategory.getDialogAddIncomeCategory();
+    private int selected_pos = 0;
+
 
     public ColorAdapter(ArrayList<String> colors, Context context) {
         this.colors = colors;
@@ -36,6 +40,17 @@ public class ColorAdapter extends RecyclerView.Adapter<ColorAdapter.MyViewHolder
     @Override
     public void onBindViewHolder(MyViewHolder holder, int position) {
         holder.img.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor(colors.get(position))));
+        int color = Color.parseColor(colors.get(position));
+        holder.itemView.setBackgroundColor(selected_pos == position ? color : Color.TRANSPARENT);
+
+        holder.img.setOnClickListener(view -> {
+            dialogAddIncomeCategory.setIndex_color(position);
+            dialogAddIncomeCategory.setHasColor(true);
+
+            notifyItemChanged(selected_pos);
+            selected_pos = holder.getAdapterPosition();
+            notifyItemChanged(selected_pos);
+        });
     }
 
     @Override
@@ -43,21 +58,23 @@ public class ColorAdapter extends RecyclerView.Adapter<ColorAdapter.MyViewHolder
         return colors.size();
     }
 
-    public static class MyViewHolder extends RecyclerView.ViewHolder {
+    public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        RelativeLayout layout;
         ImageButton img;
-        Bundle bundle = new Bundle();
-        DialogAddIncomeCategory dialogAddIncomeCategory = DialogAddIncomeCategory.getDialogAddIncomeCategory();
         public MyViewHolder(View itemView) {
             super(itemView);
             img = itemView.findViewById(R.id.color);
+            layout = itemView.findViewById(R.id.big_circle);
+            itemView.setOnClickListener(this);
+        }
 
-            img.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    dialogAddIncomeCategory.setIndex_color(getAdapterPosition());
-                    dialogAddIncomeCategory.setHasColor(true);
-                }
-            });
+        @Override
+        public void onClick(View view) {
+//            if (getAdapterPosition() == RecyclerView.NO_POSITION) return;
+//
+//            notifyItemChanged(selected_pos);
+//            selected_pos = getAdapterPosition();
+//            notifyItemChanged(selected_pos);
         }
     }
 }

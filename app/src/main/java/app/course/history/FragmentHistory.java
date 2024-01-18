@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -45,7 +46,7 @@ public class FragmentHistory extends Fragment {
     private ArrayList<CategoryPrepare> categories;
 
     private HashMap<Integer, ArrayList<SubCategory>> map;
-    private HashMap<Date, ArrayList<SubCategory>> map_of_history;
+    private HashMap<LocalDate, ArrayList<SubCategory>> map_of_history;
 
     private ImageButton backBtn;
 
@@ -133,11 +134,11 @@ public class FragmentHistory extends Fragment {
         this.map = map;
     }
 
-    public HashMap<Date, ArrayList<SubCategory>> getMap_of_history() {
+    public HashMap<LocalDate, ArrayList<SubCategory>> getMap_of_history() {
         return map_of_history;
     }
 
-    public void setMap_of_history(HashMap<Date, ArrayList<SubCategory>> map_of_history) {
+    public void setMap_of_history(HashMap<LocalDate, ArrayList<SubCategory>> map_of_history) {
         this.map_of_history = map_of_history;
     }
 

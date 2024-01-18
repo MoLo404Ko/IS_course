@@ -35,11 +35,13 @@ public class SubAdapter extends RecyclerView.Adapter<SubAdapter.MyViewHolder> {
     private ArrayList<SubCategory> categories;
     private Context context;
     private FragmentManager fragmentManager;
+    private String name_category;
 
-    public SubAdapter(Context context, ArrayList<SubCategory> categories, FragmentManager fragmentManager) {
+    public SubAdapter(Context context, ArrayList<SubCategory> categories, FragmentManager fragmentManager, String name) {
         this.categories = categories;
         this.context = context;
         this.fragmentManager = fragmentManager;
+        this.name_category = name;
     }
 
     @NonNull
@@ -62,7 +64,10 @@ public class SubAdapter extends RecyclerView.Adapter<SubAdapter.MyViewHolder> {
 
             args.putParcelable("object", categories.get(position));
             args.putInt("pos", position);
+            args.putString("category_name", name_category);
             args.putParcelableArrayList("categories", categories);
+            args.putString("sub_category_name", String.valueOf(holder.category_name.getText().toString()));
+            args.putInt("sub_category_sum", Integer.parseInt(holder.category_sum.getText().toString()));
 
             dialogAddSum.setArguments(args);
             dialogAddSum.show(fragmentManager, "tag");

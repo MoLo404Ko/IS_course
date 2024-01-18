@@ -16,6 +16,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 
 import java.lang.reflect.Array;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -50,15 +51,15 @@ public class SubHistoryFragment extends Fragment {
      * Наполняем категории по датам
      * @return
      */
-    private HashMap<Date, ArrayList<SubCategory>> filter_map() {
+    private HashMap<LocalDate, ArrayList<SubCategory>> filter_map() {
         Bundle args = this.getArguments();
         int id_category = args.getInt("id_category");
 
         FragmentHistory fragmentHistory = FragmentHistory.getFragmentHistory();
-        HashMap<Date, ArrayList<SubCategory>> map = fragmentHistory.getMap_of_history();
-        HashMap<Date, ArrayList<SubCategory>> filter_map = new HashMap<>();
+        HashMap<LocalDate, ArrayList<SubCategory>> map = fragmentHistory.getMap_of_history();
+        HashMap<LocalDate, ArrayList<SubCategory>> filter_map = new HashMap<>();
 
-        for (Date key: map.keySet()) {
+        for (LocalDate key: map.keySet()) {
             for (int i = 0; i < map.get(key).size(); i++) {
                 if (map.get(key).get(i).getId_category() == id_category) {
                     SubCategory object = map.get(key).get(i);
@@ -80,13 +81,13 @@ public class SubHistoryFragment extends Fragment {
      * Метод установки подкатегорий
      */
     private void setRecyclerView() {
-        HashMap<Date, ArrayList<SubCategory>> filter_map = filter_map();
+        HashMap<LocalDate, ArrayList<SubCategory>> filter_map = filter_map();
 
-        ArrayList<Date> key_set = new ArrayList<>(filter_map.keySet());
+        ArrayList<LocalDate> key_set = new ArrayList<>(filter_map.keySet());
         ArrayList<ArrayList<SubCategory>> big_list = new ArrayList<>(filter_map.values());
         int general_size = 0;
 
-        for (Date key: key_set) {
+        for (LocalDate key: key_set) {
             general_size += filter_map.get(key).size();
         }
 
