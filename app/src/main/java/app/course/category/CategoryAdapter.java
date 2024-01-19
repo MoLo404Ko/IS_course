@@ -71,6 +71,7 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.MyView
                 int id_category = id_categories.get(position);
                 int sum = object.getSum_category();
 
+                bundle.putParcelableArrayList("categories_income_prepare", categories_income_prepare);
                 bundle.putString("category_name", name);
                 bundle.putString("color_sub", color);
                 bundle.putString("name_sub", name);

@@ -107,6 +107,7 @@ public class DialogAddSum extends DialogFragment {
                     }
                 }).start();
 
+                category.setSum(String.valueOf(Integer.parseInt(sum_edit_text.getText().toString()) + Integer.parseInt(category.getSum())));
 //                Bundle args = new Bundle();
 //                args.putParcelable("object", object);
 //                getParentFragmentManager().setFragmentResult("addNewItemHistory", args);
@@ -205,7 +206,6 @@ public class DialogAddSum extends DialogFragment {
                 getParentFragmentManager().setFragmentResult("setNewSumCategory", result);
                 Toast.makeText(getContext(), "Добавлено!", Toast.LENGTH_SHORT).show();
 
-                mainActivity.updatePieChart(false);
             }
         });
     }

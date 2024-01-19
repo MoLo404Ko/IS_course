@@ -104,6 +104,7 @@ public class Authorization extends AppCompatActivity {
                 executorService = Executors.newSingleThreadExecutor();
                 executorService.execute(() -> {
                     try {
+                        conn = db.connect(conn);
                         statement = conn.prepareStatement(Queries.getLogin());
                         statement.setString(1, login_field.getText().toString());
                         rs = statement.executeQuery();
@@ -200,7 +201,7 @@ public class Authorization extends AppCompatActivity {
                             }
                         });
                     }
-                    catch (SQLException e) {
+                    catch (SQLException | ClassNotFoundException e) {
                         throw new RuntimeException(e);
                     }
                 });
@@ -253,15 +254,6 @@ public class Authorization extends AppCompatActivity {
         handler = new Handler(Looper.getMainLooper());
         executorService = Executors.newSingleThreadExecutor();
 
-        new Thread(() -> {
-            try {
-                conn = db.connect(conn);
-            }
-            catch (SQLException | RuntimeException | ClassNotFoundException e) {
-                e.getMessage();
-            }
-        }).start();
-
         login_field = findViewById(R.id.login);
         password_field = findViewById(R.id.password);
         forgot_password_tv = findViewById(R.id.forgot_password);
@@ -300,7 +292,7 @@ public class Authorization extends AppCompatActivity {
 
 
     /**
-     * Метод отображения анимации ошибки
+     * Метод отображения анимации
      * @param view
      */
     public static void moveAnim(View view) {
@@ -395,12 +387,6 @@ public class Authorization extends AppCompatActivity {
                         }
                     }
                 }).start();
-//                statement = connection.prepareStatement(Queries.setDefaultAmounts());
-//                statement.setInt(1, User.getUser().getID_user());
-//                statement.setString(2, "Основной счет");
-//                statement.setDouble(3, 0);
-//                statement.setInt(4,1);
-//                statement.executeUpdate();
             }
 
             statement.close();
@@ -498,36 +484,6 @@ public class Authorization extends AppCompatActivity {
                 categories.add(categoryPrepare);
                 categoryPrepare.setId_category(id_categories.get(i));
             }
-
-//            if (isIncoming) {
-//                if (!isFill) {
-//                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_green_bg),
-//                            R.drawable.ic_bag, 0, "0,0", "Зарплата"));
-//                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_red_bg),
-//                            R.drawable.ic_present, 0, "0,0", "Подарки"));
-//                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_sea_bg),
-//                            R.drawable.ic_grow, 0, "0,0", "Инвестиции"));
-//
-//                    statement.executeUpdate(Queries.setDefaultCategoryIncome(User.getUser(),
-//                            "Зарплата", "Подарки", "Инвестиции",
-//                            R.drawable.ic_bag, R.drawable.ic_present, R.drawable.ic_grow,
-//                            "#0F992D", "#BC1A37", "#00A4AE"));
-//                }
-//            }
-
-//            else {
-//                if (!isFill) {
-//                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_green_bg),
-//                            R.drawable.ic_basket, 0, "0,0", "Обязательные"));
-//                    categories.add(new CategoryPrepare(String.valueOf(R.drawable.shape_red_bg),
-//                            R.drawable.ic_entertaiment, 0, "0,0", "Необязательные"));
-//
-//                    statement.executeUpdate(Queries.setDefaultCategoryExpense(User.getUser(),
-//                            "Обязательные", "Необязательные",
-//                            R.drawable.ic_basket, R.drawable.ic_entertaiment,
-//                            "#0F992D", "#BC1A37"));
-//                }
-//            }
 
             statement.close();
             rs.close();

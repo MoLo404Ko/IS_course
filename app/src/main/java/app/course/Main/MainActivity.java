@@ -8,6 +8,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 import android.app.DatePickerDialog;
 import android.app.Dialog;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -127,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static HashMap<Integer, ArrayList<SubCategory>> map_of_sub_categories;
     private static HashMap<LocalDate, ArrayList<SubCategory>> map_of_history;
+    private Context context;
 
     private NavigationBarView.OnItemSelectedListener listener_nav = item -> {
         switch (item.getItemId()) {
@@ -333,6 +335,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void init() throws SQLException, ExecutionException, InterruptedException {
+        context = getBaseContext();
+        mainActivity.setContext(context);
+
         handler = new Handler(Looper.getMainLooper());
         add_button = findViewById(R.id.add_btn);
         history_button = findViewById(R.id.history_btn);
@@ -351,6 +356,8 @@ public class MainActivity extends AppCompatActivity {
         shadow_layout = findViewById(R.id.shadow_layout);
 
         pieChart = new PieChart(this);
+        mainActivity.set_PieChart(pieChart);
+
         pieChart.setId(View.generateViewId());
         pieChart_layout = findViewById(R.id.piechart_layout);
 
@@ -543,46 +550,58 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void addSlices(PieChart pieChart) {
-        pieChart.setInnerPadding(65f);
+//        pieChart.setInnerPadding(65f);
 
-//        if (categories_income.size() == 0) {
+        if (categories_income.size() == 0) {
             pieChart.addPieSlice(new PieModel("", 100,
                     getResources().getColor(R.color.blue_general, getTheme())));
-//        }
-//
-//        else {
-//            for (CategoryPrepare category: categories_income) {
-//                int color = Color.parseColor(category.getBg_color_category());
-//                Float percent = Float.parseFloat(category.getCategory_procent().replace(",", "."));
-//                pieChart.addPieSlice(new PieModel("", percent,
-//                        color));
-//            }
-//        }
+            mainActivity.set_PieChart(pieChart);
+        }
+
+        else {
+            for (CategoryPrepare category: categories_income) {
+                PieModel model = new PieModel();
+                int color = Color.parseColor(category.getBg_color_category());
+                String val = category.getCategory_procent().replace(",", ".");
+                model.setColor(color);
+                model.setValue(Float.valueOf(val));
+
+                pieChart.addPieSlice(model);
+            }
+        }
     }
 
-    public void updatePieChart(boolean action)
+    public void updatePieChart(PieChart pieChart, ArrayList<CategoryPrepare> categories)
     {
         pieChart.clearChart();
-    }
+        pieChart.update();
 
-    private void updatePercent(ArrayList<CategoryPrepare> categories_income) {
-        int sum_of_categories = 0;
-        for (CategoryPrepare category: categories_income) {
-            if (category.getSum_category() > 0) sum_of_categories += category.getSum_category();
-            else sum_of_categories += category.getSum_category() * (-1);
+        if (categories.size() == 0) {
+            Log.d("MyLog", "entry");
+            PieModel model = new PieModel();
+            model.setValue(100);
+            int color = mainActivity.get_Context().getResources().getColor(R.color.blue_general, mainActivity.get_Context().getTheme());
+            model.setColor(color);
+
+            pieChart.addPieSlice(model);
         }
 
-        for (int i = 0; i < categories_income.size(); i++) {
-            if (sum_of_categories != 0) {
-                double percent;
-                percent = (double)categories_income.get(i).getSum_category() / sum_of_categories * 100;
+        else {
+            Log.d("MyLog", "entry2");
 
-                categories_income.get(i).setCategory_procent(df.format(percent));
-            }
-            else {
-                categories_income.get(i).setCategory_procent("0");
+            for (CategoryPrepare category: categories) {
+                PieModel model = new PieModel();
+                int color = Color.parseColor(category.getBg_color_category());
+                String val = category.getCategory_procent().replace(",", ".");
+                model.setColor(color);
+                model.setValue(Float.valueOf(val));
+
+                pieChart.addPieSlice(model);
             }
         }
+        mainActivity.set_PieChart(pieChart);
+
+        pieChart.update();
     }
 
     @Override
@@ -1003,5 +1022,21 @@ public class MainActivity extends AppCompatActivity {
 
     public void setTotal_sum(TextView total_sum) {
         this.total_sum = total_sum;
+    }
+
+    public PieChart getPieChart() {
+        return pieChart;
+    }
+
+    public void set_PieChart(PieChart pieChart) {
+        this.pieChart = pieChart;
+    }
+
+    public Context get_Context() {
+        return context;
+    }
+
+    public void setContext(Context context) {
+        this.context = context;
     }
 }

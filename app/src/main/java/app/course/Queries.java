@@ -56,19 +56,13 @@ public class Queries {
         String query = "SELECT history_income.name_category, SUM(sum) FROM history_income WHERE ID_user = ? and " +
                 "date_last_entry BETWEEN ? and ? GROUP BY history_income.name_category";
 
-//        String query = "SELECT category_income.ID_category, SUM(sub_sum), name_category FROM category_income, " +
-//                "sub_category_income WHERE category_income.ID_user = ? and " +
-//                "category_income.ID_category = sub_category_income.ID_category and date_last_entry " +
-//                "BETWEEN ? and ? GROUP BY category_income.ID_category";
         return query;
     }
 
     public static String getSumForAllTime() {
         String query = "SELECT history_income.name_category, SUM(sum) FROM history_income WHERE ID_user = ? " +
                 "GROUP BY history_income.name_category";
-//        String query = "SELECT category_income.ID_category, SUM(sub_sum), name_category FROM category_income, " +
-//                "sub_category_income WHERE category_income.ID_user = ? and " +
-//                "category_income.ID_category = sub_category_income.ID_category";
+
         return query;
     }
 

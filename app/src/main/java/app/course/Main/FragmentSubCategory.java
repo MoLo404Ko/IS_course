@@ -251,6 +251,9 @@ public class FragmentSubCategory extends Fragment {
 
                 result.clear();
 
+                MainActivity mainActivity = MainActivity.getMainActivity();
+                mainActivity.updatePieChart(mainActivity.getPieChart(), getArguments().getParcelableArrayList("categories_income_prepare"));
+
                 Snackbar.make(sub_categories_recycler, object.getName(), Snackbar.LENGTH_SHORT).
                         setAction("восстановить", v -> {
                             current_sum += Integer.parseInt(object.getSum());
@@ -266,6 +269,7 @@ public class FragmentSubCategory extends Fragment {
                             result.putBoolean("isSubCategory", true);
 
                             getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", result);
+                            mainActivity.updatePieChart(mainActivity.getPieChart(), getArguments().getParcelableArrayList("categories_income_prepare"));
                         }).show();
 
 

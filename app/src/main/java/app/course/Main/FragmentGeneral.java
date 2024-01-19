@@ -220,6 +220,8 @@ public class FragmentGeneral extends Fragment {
                         income_sum += diff_sum;
 
                         updatePercent(categories_income);
+                        MainActivity mainActivity = MainActivity.getMainActivity();
+                        mainActivity.updatePieChart(mainActivity.getPieChart(), categories_income_prepare);
 
                         categories_income_adapter.notifyDataSetChanged();
                         incomes_text.setText(String.valueOf(income_sum));
@@ -428,6 +430,8 @@ public class FragmentGeneral extends Fragment {
 
                 getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", args);
 
+                MainActivity mainActivity = MainActivity.getMainActivity();
+                mainActivity.updatePieChart(mainActivity.getPieChart(), categories_income_prepare);
                 args.clear();
 
                 new Thread(() -> {
@@ -487,6 +491,7 @@ public class FragmentGeneral extends Fragment {
                             args.putInt("key", object_prepare.getId_category());
 
                             getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", args);
+                            mainActivity.updatePieChart(mainActivity.getPieChart(), categories_income_prepare);
 
                             args.clear();
 
