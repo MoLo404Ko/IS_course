@@ -173,6 +173,17 @@ public class FragmentGeneral extends Fragment {
             });
                 });
 
+        getParentFragmentManager().setFragmentResultListener("remove_item", this,
+                (requestKey, result) -> {
+            int pos = result.getInt("pos");
+            int new_sum = Integer.parseInt(incomes_text.getText().toString()) - categories_income.get(pos).getSum_category();
+
+            incomes_text.setText(String.valueOf(new_sum));
+
+            categories_income.remove(pos);
+            categories_income_adapter.notifyItemRemoved(result.getInt("pos"));
+                });
+
         getParentFragmentManager().setFragmentResultListener("result_sum", this,
                 (requestKey, result) -> {
                     Bundle args = new Bundle();
@@ -256,6 +267,14 @@ public class FragmentGeneral extends Fragment {
 
 //                    setHeightListView(category_income_list);
                     categories_income_adapter.notifyDataSetChanged();
+
+                    try {
+                        id_account = getAmountId(id_account);
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     try {
                         id_categories.add(updateIdCategories(color, name, id_icon, id_account));
@@ -354,13 +373,13 @@ public class FragmentGeneral extends Fragment {
         categories_expense = new ArrayList<>();
 
         category_income_recycler = view.findViewById(R.id.category_income_recycler);
-        category_expense_list = view.findViewById(R.id.category_expense_list);
+//        category_expense_list = view.findViewById(R.id.category_expense_list);
 
         incomes_text = view.findViewById(R.id.incomes_text);
         incomes_text.setText("0");
 
-        expense_text = view.findViewById(R.id.expenses_text);
-        expense_text.setText("0");
+//        expense_text = view.findViewById(R.id.expenses_text);
+//        expense_text.setText("0");
 
         bundle = this.getArguments();
 
@@ -448,11 +467,8 @@ public class FragmentGeneral extends Fragment {
                             else removed_names_items += "\'" + removed_categories.get(i) + "\'" + ",";
                         }
 
-                        String query = "DELETE FROM income where id_user = " + User.getUser().getID_user() +
-                                " and name_income in (" + removed_names_items +")";
-
                         connection = dataBaseHandler.connect(connection);
-                        preparedStatement = connection.prepareStatement(query);
+                        preparedStatement = connection.prepareStatement(Queries.removeIncome(removed_names_items));
 
                         preparedStatement.executeUpdate();
                     }
@@ -727,6 +743,62 @@ public class FragmentGeneral extends Fragment {
             }
 
             return id_account;
+        }
+    }
+
+    /**
+     * Метод получения нового ID счета
+     */
+    private Integer getAmountId(int id_account) throws ExecutionException, InterruptedException {
+        ExecutorService es = Executors.newSingleThreadExecutor();
+        Future<Integer> future = es.submit(new GetAmountIdTask(id_account));
+
+        es.shutdown();
+        return future.get();
+    }
+
+    private class GetAmountIdTask implements Callable<Integer> {
+        private Connection conn = null;
+        private PreparedStatement preparedStatement = null;
+        private ResultSet resultSet = null;
+
+        private DataBaseHandler db = DataBaseHandler.getDataBaseHadler();
+        private MainActivity mainActivity = MainActivity.getMainActivity();
+
+        private int id_amount;
+
+        public GetAmountIdTask(int id_amount) {
+            this.id_amount = id_amount;
+        }
+
+        @Override
+        public Integer call() {
+            try {
+                conn = dataBaseHandler.connect(conn);
+                preparedStatement = conn.prepareStatement(Queries.getIdAmount());
+
+                preparedStatement.setInt(1, User.getUser().getID_user());
+                preparedStatement.setString(2, ((SpinnerObject)mainActivity.getDropDown().getSelectedItem()).getName());
+
+                resultSet = preparedStatement.executeQuery();
+
+                while (resultSet.next()) id_amount = resultSet.getInt(1);
+            }
+            catch (SQLException | ClassNotFoundException e) {
+                Log.d("MyLog", e.getMessage());
+            }
+            finally {
+                try {
+                    if (conn != null) dataBaseHandler.closeConnect(conn);
+                    if (preparedStatement != null) preparedStatement.close();
+                    if (resultSet != null) resultSet.close();
+                }
+                catch (SQLException e) {
+                    Log.d("MyLog", e.getMessage());
+                }
+            }
+
+            return id_amount;
         }
     }
 

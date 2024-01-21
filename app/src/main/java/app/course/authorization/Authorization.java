@@ -41,6 +41,7 @@ import app.course.R;
 import app.course.User;
 import app.course.category.Category;
 import app.course.category.CategoryPrepare;
+import app.course.spinner.SpinnerObject;
 
 public class Authorization extends AppCompatActivity {
     private EditText login_field, password_field;
@@ -59,10 +60,9 @@ public class Authorization extends AppCompatActivity {
 
     private User user = User.getUser();
 
-    private ArrayList<String> amounts;
+    private SpinnerObject[] amounts;
     private ArrayList<CategoryPrepare> categories_income;
     private ArrayList<CategoryPrepare> categories_expense;
-
     private int press_count = 0;
     long start_time;
     @Override
@@ -143,6 +143,16 @@ public class Authorization extends AppCompatActivity {
                                              * Перевод пароля в ХЭШ и проверка на наличие такого же ХЭШ в БД
                                              */
                                             try {
+                                                new Thread(() -> {
+                                                    try {
+                                                        amounts = getDropDown();
+                                                    }
+                                                    catch (ExecutionException |
+                                                           InterruptedException e) {
+                                                        Log.d("MyLog", e.getMessage());
+                                                    }
+                                                }).start();
+
                                                 ArrayList<Integer> id_categories = new ArrayList<>();
                                                 HashPassword hp = new HashPassword();
                                                 boolean isCorrect = hp.validatePassword(password_field.getText().toString(), password);
@@ -152,7 +162,6 @@ public class Authorization extends AppCompatActivity {
                                                         errorField("password_field", true, password_field);
 
                                                         try {
-                                                            amounts = getDropDown();
                                                             categories_income = getCategoriesIncome();
 
 //                                                            categories_expense = getCategoriesExpense();
@@ -167,7 +176,7 @@ public class Authorization extends AppCompatActivity {
                                                         }
 
                                                         Intent intent = new Intent(Authorization.this, MainActivity.class);
-                                                        intent.putExtra("amounts", amounts);
+                                                        intent.putExtra("amounts", amounts[0]);
                                                         intent.putExtra("categories_income", categories_income);
                                                         intent.putExtra("categories_expense", categories_expense);
                                                         intent.putExtra("id_categories", id_categories);
@@ -245,8 +254,6 @@ public class Authorization extends AppCompatActivity {
     private void init() {
         check_box = findViewById(R.id.check_box);
 
-
-        amounts = new ArrayList<>();
         categories_income = new ArrayList<>();
         categories_expense = new ArrayList<>();
 
@@ -319,9 +326,9 @@ public class Authorization extends AppCompatActivity {
      * 2. В поток передается задача
      * 3. Возвращается список счетов
      */
-    private ArrayList<String> getDropDown() throws ExecutionException, InterruptedException {
+    private SpinnerObject[] getDropDown() throws ExecutionException, InterruptedException {
         ExecutorService es = Executors.newSingleThreadExecutor();
-        Future<ArrayList> future = es.submit(new GetDropDownTask(conn));
+        Future<SpinnerObject[]> future = es.submit(new GetDropDownTask(conn));
 
         es.shutdown();
 
@@ -334,18 +341,18 @@ public class Authorization extends AppCompatActivity {
      * 1. Запрос счетов у базы данных
      * 2. Проверка наличия счетов
      */
-    private static class GetDropDownTask implements Callable<ArrayList> {
+    private static class GetDropDownTask implements Callable<SpinnerObject[]> {
         private Connection connection;
         private PreparedStatement statement = null;
         private ResultSet rs = null;
-        private ArrayList<String> amounts = new ArrayList<>();
+        private SpinnerObject[] amounts = new SpinnerObject[1];
 
         public GetDropDownTask(Connection connection) {
             this.connection = connection;
         }
 
         @Override
-        public ArrayList call() throws Exception {
+        public SpinnerObject[] call() throws Exception {
             boolean isFill = false;
             statement = connection.prepareStatement(Queries.getAmounts());
             statement.setInt(1, User.getUser().getID_user());
@@ -353,11 +360,11 @@ public class Authorization extends AppCompatActivity {
 
             while (rs.next()) {
                 isFill = true;
-                amounts.add(rs.getString(1));
+                amounts[0] = new SpinnerObject(rs.getString(1), String.valueOf(rs.getInt(2)));
             }
 
             if (!isFill) {
-                amounts.add("Основной счет");
+                amounts[0] = new SpinnerObject("Основной счет", "0");
 
                 new Thread(() -> {
                     DataBaseHandler dataBaseHandler = DataBaseHandler.getDataBaseHadler();

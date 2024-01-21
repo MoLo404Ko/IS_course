@@ -1,6 +1,7 @@
 package app.course.spinner;
 
 import android.content.Context;
+import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,16 +12,23 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentResultListener;
 
 import app.course.R;
 
 public class SpinnerAdapter extends ArrayAdapter<SpinnerObject> {
 
     private LayoutInflater layoutInflater;
+    private FragmentManager fragmentManager;
+    private SpinnerObject object;
 
-    public SpinnerAdapter(@NonNull Context context, int resource, @NonNull SpinnerObject[] spinnerObjects) {
+    public SpinnerAdapter(@NonNull Context context, int resource, @NonNull SpinnerObject[] spinnerObjects,
+                          FragmentManager fragmentManager) {
         super(context, resource, spinnerObjects);
         layoutInflater = LayoutInflater.from(context);
+        this.fragmentManager = fragmentManager;
+        this.object = spinnerObjects[0];
     }
 
     @NonNull
@@ -54,7 +62,13 @@ public class SpinnerAdapter extends ArrayAdapter<SpinnerObject> {
         edit_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Toast.makeText(getContext(), "click", Toast.LENGTH_SHORT).show();
+                DialogEditSum dialogEditSum = new DialogEditSum();
+
+                Bundle args = new Bundle();
+                args.putParcelable("object", object);
+                dialogEditSum.setArguments(args);
+
+                dialogEditSum.show(fragmentManager, "TAG");
             }
         });
 

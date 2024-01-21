@@ -17,6 +17,7 @@ import java.util.ArrayList;
 
 import app.course.ColorAdapter;
 import app.course.R;
+import app.course.delete_item.DialogDeleteItem;
 
 public class NewItemAdapter extends RecyclerView.Adapter<NewItemAdapter.MyViewHolder> {
     private ArrayList<Drawable> icons;
@@ -44,10 +45,17 @@ public class NewItemAdapter extends RecyclerView.Adapter<NewItemAdapter.MyViewHo
             public void onClick(View view) {
                 Toast.makeText(view.getContext(), "Выбрано: " + holder.name.toString(), Toast.LENGTH_SHORT).show();
                 DialogAddNewItem dialogAddNewItem = DialogAddNewItem.getDialogAddNewItem();
+                DialogDeleteItem dialogDeleteItem = DialogDeleteItem.getDialogDeleteItem();
 
-                Log.d("MyLog", holder.getAdapterPosition() + " pp");
-                dialogAddNewItem.setChoose_pos(holder.getAdapterPosition());
-                DialogAddNewItem.getDialogAddNewItem().setChoose_pos(holder.getAdapterPosition());
+                if (dialogAddNewItem != null) {
+                    dialogAddNewItem.setChoose_pos(holder.getAdapterPosition());
+                    DialogAddNewItem.getDialogAddNewItem().setChoose_pos(holder.getAdapterPosition());
+                }
+
+                if (dialogDeleteItem != null) {
+                    dialogDeleteItem.setChoose_pos(holder.getAdapterPosition());
+                    DialogDeleteItem.getDialogDeleteItem().setChoose_pos(holder.getAdapterPosition());
+                }
             }
         });
     }

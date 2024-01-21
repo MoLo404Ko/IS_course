@@ -76,7 +76,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/incomes"
-            android:textColor="@color/black">
+            android:textColor="@color/transparent">
         </TextView>
 
         <TextView
@@ -87,7 +87,7 @@
             android:layout_marginLeft="35dp"
             android:layout_marginRight="35dp"
             android:text="@string/expenses"
-            android:textColor="@color/black">
+            android:textColor="@color/transparent">
         </TextView>
 
         <TextView
@@ -95,6 +95,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/general"
+            android:textColor="@color/transparent"
             style="@style/BoldFontBlue_14">
         </TextView>
     </LinearLayout>
@@ -121,30 +122,18 @@
                 android:id="@+id/add_btn"
                 android:layout_width="30dp"
                 android:layout_height="30dp"
-                android:src="@drawable/ic_add">
+                android:src="@drawable/ic_add_main">
             </ImageButton>
 
-            <RelativeLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp">
 
-                <ImageButton
-                    android:id="@+id/minus_btn"
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
+            <ImageButton
+                android:id="@+id/minus_btn"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
 
-                    android:src="@drawable/ic_minus">
-                </ImageButton>
-
-                <ImageButton
-                    android:layout_width="30dp"
-                    android:layout_height="30dp"
-
-                    android:src="@drawable/shadow_btn"
-                    android:background="@color/shadow">
-                </ImageButton>
-            </RelativeLayout>
+                android:layout_marginTop="20dp"
+                android:src="@drawable/ic_minus">
+            </ImageButton>
         </LinearLayout>
 
         <ImageButton
@@ -187,10 +176,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="horizontal"
-
-        app:layout_constraintBottom_toTopOf="@id/bottomNav"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent">
+<!--        app:layout_constraintBottom_toTopOf="@id/bottomNav"-->
     </LinearLayout>
 
     <ScrollView
@@ -200,18 +189,19 @@
 
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/bottomNav">
+        app:layout_constraintBottom_toBottomOf="parent">
+<!--        app:layout_constraintBottom_toTopOf="@id/bottomNav">-->
     </ScrollView>
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNav"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:menu="@menu/bottom_menu"
+<!--    <com.google.android.material.bottomnavigation.BottomNavigationView-->
+<!--        android:id="@+id/bottomNav"-->
+<!--        android:layout_width="0dp"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        app:menu="@menu/bottom_menu"-->
 
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+<!--        app:layout_constraintBottom_toBottomOf="parent"-->
+<!--        app:layout_constraintLeft_toLeftOf="parent"-->
+<!--        app:layout_constraintRight_toRightOf="parent" />-->
 
 
 

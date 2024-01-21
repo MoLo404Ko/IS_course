@@ -9,6 +9,7 @@ import androidx.fragment.app.FragmentTransaction;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -65,6 +66,7 @@ import app.course.add_new_item.DialogAddNewItem;
 import app.course.authorization.DataBaseHandler;
 import app.course.category.Category;
 import app.course.category.CategoryPrepare;
+import app.course.delete_item.DialogDeleteItem;
 import app.course.history.FragmentHistory;
 import app.course.history.History;
 import app.course.income.FragmentIncome;
@@ -102,7 +104,9 @@ public class MainActivity extends AppCompatActivity {
     private FragmentIncome fragmentIncome = null;
 
     private Button datePicker;
-    private ImageButton add_button, minus_button, history_button;
+    private ImageButton add_button;
+    private ImageButton minus_button;
+    private ImageButton history_button;
     private Spinner dropDown;
     private TextView total_sum;
     private TextView income_tv;
@@ -123,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Drawable> icons_income;
     private ArrayList<Integer> id_categories = new ArrayList<>();
     private String full_date = "";
+    private SpinnerAdapter adapter;
 
     public static String date;
     private ArrayList<SubCategory>[] save_array = new ArrayList[1];
@@ -130,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
     private static HashMap<Integer, ArrayList<SubCategory>> map_of_sub_categories;
     private static HashMap<LocalDate, ArrayList<History>> map_of_history;
     private Context context;
+    private SpinnerObject[] array;
 
     private NavigationBarView.OnItemSelectedListener listener_nav = item -> {
         switch (item.getItemId()) {
@@ -196,21 +202,32 @@ public class MainActivity extends AppCompatActivity {
             date_picker_shadow.setVisibility(View.VISIBLE);
             main_fragment.setVisibility(View.VISIBLE);
 
-            fragmentGeneral = new FragmentGeneral(getBaseContext(), getSupportFragmentManager());
+//            fragmentGeneral = new FragmentGeneral(getBaseContext(), getSupportFragmentManager());
+//
+//            categories_income = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_income");
+//            categories_expense = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_expense");
+//            id_categories = getIntent().getIntegerArrayListExtra("id_categories");
+//
+//            Bundle args = new Bundle();
+//
+//            args.putSerializable("categories_income", categories_income);
+//            args.putSerializable("categories_expense", categories_expense);
+//            args.putIntegerArrayList("id_categories", id_categories);
+//            fragmentGeneral.setArguments(args);
+//
+//            fragmentTransaction = getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, fragmentGeneral);
+//            fragmentTransaction.commit();
+        });
 
-            categories_income = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_income");
-            categories_expense = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_expense");
-            id_categories = getIntent().getIntegerArrayListExtra("id_categories");
+        getSupportFragmentManager().setFragmentResultListener("change_amount", this,
+                (requestKey, result) -> {
+            if (result.get("change_sum") != null) {
+                int old_sum = Integer.parseInt(total_sum.getText().toString().replace("$", ""));
+                int new_sum = old_sum - result.getInt("change_sum");
+                total_sum.setText(String.valueOf(new_sum));
+            }
 
-            Bundle args = new Bundle();
-
-            args.putSerializable("categories_income", categories_income);
-            args.putSerializable("categories_expense", categories_expense);
-            args.putIntegerArrayList("id_categories", id_categories);
-            fragmentGeneral.setArguments(args);
-
-            fragmentTransaction = getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, fragmentGeneral);
-            fragmentTransaction.commit();
+            adapter.notifyDataSetChanged();
         });
 
         getSupportFragmentManager().setFragmentResultListener("change_diff_sum", this,
@@ -366,11 +383,13 @@ public class MainActivity extends AppCompatActivity {
 
             DialogAddNewItem dialogAddNewItem = new DialogAddNewItem();
             args.putSerializable("incomes_list", categories_income);
+            args.putParcelable("spinner_object", array[0]);
 
             dialogAddNewItem.setArguments(args);
             dialogAddNewItem.show(getSupportFragmentManager(), "tag");
         });
 
+        clickMinusBtn();
     }
 
     public void init() throws SQLException, ExecutionException, InterruptedException {
@@ -379,6 +398,7 @@ public class MainActivity extends AppCompatActivity {
 
         handler = new Handler(Looper.getMainLooper());
         add_button = findViewById(R.id.add_btn);
+        minus_button = findViewById(R.id.minus_btn);
         history_button = findViewById(R.id.history_btn);
 
         total_sum = findViewById(R.id.total_sum);
@@ -410,8 +430,8 @@ public class MainActivity extends AppCompatActivity {
         income_tv = findViewById(R.id.income_tv);
         general_tv = findViewById(R.id.general_tv);
 
-        bottomNavigationView = findViewById(R.id.bottomNav);
-        bottomNavigationView.setOnItemSelectedListener(listener_nav);
+//        bottomNavigationView = findViewById(R.id.bottomNav);
+//        bottomNavigationView.setOnItemSelectedListener(listener_nav);
 
         setDropDown();
 
@@ -438,7 +458,7 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction.replace(R.id.main_fragment, fragmentGeneral);
         fragmentTransaction.commit();
 
-        clickLinearBtns();
+//        clickLinearBtns();
         setPieChart();
     }
 
@@ -448,14 +468,13 @@ public class MainActivity extends AppCompatActivity {
      */
     private void setDropDown() {
         dropDown = findViewById(R.id.amounts_drop_down);
+        array = new SpinnerObject[1];
 
-        SpinnerObject spinnerObject = new SpinnerObject("Основной счет", "0");
-        SpinnerObject[] array = new SpinnerObject[1];
-        array[0] = spinnerObject;
+        Intent intent = this.getIntent();
+        array[0] = intent.getParcelableExtra("amounts");
 
-        SpinnerAdapter adapter = new SpinnerAdapter(this, R.layout.amount_adapter, array);
+        adapter = new SpinnerAdapter(this, R.layout.amount_adapter, array, getSupportFragmentManager());
         dropDown.setAdapter(adapter);
-
         mainActivity.setDropDown(dropDown);
     }
     // ---------------------------------------------------------------------------------------------
@@ -549,11 +568,11 @@ public class MainActivity extends AppCompatActivity {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
-        main_fragment.getLayoutParams().height = (int)(displayMetrics.heightPixels / 2.75 - 40);
+        main_fragment.getLayoutParams().height = (int)(displayMetrics.heightPixels / 2.4 - 10);
         main_fragment.setBackground(getResources().getDrawable(R.drawable.shape_bg_general_fragment, getTheme()));
 
         shadow_layout.setBackground(getResources().getDrawable(R.drawable.shadow_bg_fragment, getTheme()));
-        shadow_layout.getLayoutParams().height = (int)(displayMetrics.heightPixels / 2.75 - 30);
+        shadow_layout.getLayoutParams().height = (int)(displayMetrics.heightPixels / 2.4);
     }
 
     private void setPieChart() {
@@ -617,7 +636,6 @@ public class MainActivity extends AppCompatActivity {
         pieChart.update();
 
         if (categories.size() == 0) {
-            Log.d("MyLog", "entry");
             PieModel model = new PieModel();
             model.setValue(100);
             int color = mainActivity.get_Context().getResources().getColor(R.color.blue_general, mainActivity.get_Context().getTheme());
@@ -783,7 +801,7 @@ public class MainActivity extends AppCompatActivity {
             fragmentHistory.setArguments(args);
 
             transaction.replace(R.id.fragment_layout, fragmentHistory);
-            transaction.detach(fragmentGeneral);
+//            transaction.detach(fragmentGeneral);
             transaction.commit();
         });
     }
@@ -1015,6 +1033,26 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Обработка нажатия на кнопку минус
+     */
+    private void clickMinusBtn() {
+        minus_button.setOnClickListener(view -> {
+            Bundle args = new Bundle();
+
+            DialogDeleteItem dialogDeleteItem = new DialogDeleteItem();
+            args.putSerializable("incomes_list", categories_income);
+            args.putParcelable("spinner_object", array[0]);
+
+            dialogDeleteItem.setArguments(args);
+            dialogDeleteItem.show(getSupportFragmentManager(), "tag");
+        });
+    }
+    // ---------------------------------------------------------------------------------------------
+
+
     public static HashMap<Integer, ArrayList<SubCategory>> getMap_of_sub_categories() {
         return map_of_sub_categories;
     }
@@ -1078,4 +1116,6 @@ public class MainActivity extends AppCompatActivity {
     public void setCategories_income(ArrayList<CategoryPrepare> categories_income) {
         this.categories_income = categories_income;
     }
+
+
 }

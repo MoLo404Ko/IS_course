@@ -93,49 +93,49 @@
                 app:layout_constraintRight_toRightOf="parent">
             </androidx.recyclerview.widget.RecyclerView>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/expenses"
-                android:layout_marginLeft="20dp"
-                android:layout_marginTop="12dp"
+<!--            <TextView-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="@string/expenses"-->
+<!--                android:layout_marginLeft="20dp"-->
+<!--                android:layout_marginTop="12dp"-->
 
-                style="@style/boldFont_16"
+<!--                style="@style/boldFont_16"-->
 
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/category_income_recycler">
-            </TextView>
+<!--                app:layout_constraintLeft_toLeftOf="parent"-->
+<!--                app:layout_constraintTop_toBottomOf="@id/category_income_recycler">-->
+<!--            </TextView>-->
 
-            <TextView
-                android:id="@+id/expenses_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="20dp"
-                android:layout_marginTop="12dp"
+<!--            <TextView-->
+<!--                android:id="@+id/expenses_text"-->
+<!--                android:layout_width="wrap_content"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:layout_marginRight="20dp"-->
+<!--                android:layout_marginTop="12dp"-->
 
-                style="@style/boldFont_16"
+<!--                style="@style/boldFont_16"-->
 
-                app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/category_income_recycler">
-            </TextView>
+<!--                app:layout_constraintRight_toRightOf="parent"-->
+<!--                app:layout_constraintTop_toBottomOf="@id/category_income_recycler">-->
+<!--            </TextView>-->
 
-            <ListView
-                android:id="@+id/category_expense_list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+<!--            <ListView-->
+<!--                android:id="@+id/category_expense_list"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
 
-                android:divider="@color/transparent"
-                android:dividerHeight="7dp"
+<!--                android:divider="@color/transparent"-->
+<!--                android:dividerHeight="7dp"-->
 
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="12dp"
+<!--                android:layout_marginTop="12dp"-->
+<!--                android:layout_marginBottom="12dp"-->
 
-                android:listSelector="@color/transparent"
-                android:scrollbars="none"
+<!--                android:listSelector="@color/transparent"-->
+<!--                android:scrollbars="none"-->
 
-                app:layout_constraintTop_toBottomOf="@id/expenses_text"
-                app:layout_constraintLeft_toLeftOf="parent"
-                app:layout_constraintRight_toRightOf="parent">
-            </ListView>
+<!--                app:layout_constraintTop_toBottomOf="@id/expenses_text"-->
+<!--                app:layout_constraintLeft_toLeftOf="parent"-->
+<!--                app:layout_constraintRight_toRightOf="parent">-->
+<!--            </ListView>-->
         </androidx.constraintlayout.widget.ConstraintLayout>
 </FrameLayout>

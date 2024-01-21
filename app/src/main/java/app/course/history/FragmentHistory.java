@@ -118,11 +118,9 @@ public class FragmentHistory extends Fragment {
         backBtn.setOnClickListener(view -> {
             FragmentTransaction fragmentTransaction = getParentFragmentManager().beginTransaction();
 
-            Bundle args = new Bundle();
             fragmentTransaction.detach(this);
             fragmentTransaction.commit();
-
-            getParentFragmentManager().setFragmentResult("backBtn", args);
+            getParentFragmentManager().setFragmentResult("backBtn", null);
         });
     }
 

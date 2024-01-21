@@ -23,7 +23,7 @@ public class Queries {
     }
 
     public static String getAmounts() {
-        String query = "SELECT name_accounts FROM accounts WHERE ID_USER = ?";
+        String query = "SELECT name_accounts, sum FROM accounts WHERE ID_USER = ?";
         return query;
     }
 
@@ -58,6 +58,17 @@ public class Queries {
     public static String getCategoryExpense() {
         String query = "SELECT income_sum, name_income, income_icon, bg_expense " +
                 "FROM expense where ID_user = ?";
+        return query;
+    }
+
+    public static String getIdAmount() {
+        String query = "SELECT ID_accounts FROM accounts WHERE ID_user = ? and name_accounts = ?";
+        return query;
+    }
+
+    public static String removeIncome(String removed_names_items) {
+        String query = "DELETE FROM income where id_user = ?" +
+                " and name_income in (" + removed_names_items +")";
         return query;
     }
     /* -------------------------------------------------------------------------------------------*/
@@ -117,4 +128,12 @@ public class Queries {
         return query;
     }
     /* -------------------------------------------------------------------------------------------*/
+
+    /* ------------------------------------ DIALOG_EDIT_SUM --------------------------------------*/
+    public static String updateSumAmount() {
+        String query = "UPDATE accounts SET sum = ? WHERE ID_user = ? and name_accounts = ? ";
+        return query;
+    }
+    /* -------------------------------------------------------------------------------------------*/
+
 }

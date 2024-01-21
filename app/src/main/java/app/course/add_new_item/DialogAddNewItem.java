@@ -33,6 +33,7 @@ import app.course.Main.MainActivity;
 import app.course.R;
 import app.course.category.CategoryPrepare;
 import app.course.history.History;
+import app.course.spinner.SpinnerObject;
 import app.course.sub_category.SubCategory;
 
 public class DialogAddNewItem extends DialogFragment {
@@ -139,7 +140,7 @@ public class DialogAddNewItem extends DialogFragment {
         new_item_recycler.setAdapter(newItemAdapter);
 
         constraintSet.clone(main_layout);
-        constraintSet.connect(R.id.new_item_recycler, ConstraintSet.TOP, R.id.radio_income_expense, ConstraintSet.BOTTOM);
+        constraintSet.connect(R.id.new_item_recycler, ConstraintSet.TOP, R.id.sum_and_date_layout_edit_add_dialog, ConstraintSet.BOTTOM);
         constraintSet.connect(R.id.new_item_recycler, ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT);
         constraintSet.connect(R.id.new_item_recycler, ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT);
         constraintSet.applyTo(main_layout);
@@ -170,6 +171,16 @@ public class DialogAddNewItem extends DialogFragment {
                     result.putInt("pos", dialogAddNewItem.getChoose_pos());
 
                     getParentFragmentManager().setFragmentResult("result_sum", result);
+
+                    Bundle args = new Bundle();
+
+                    SpinnerObject spinnerObject = this.getArguments().getParcelable("spinner_object");
+                    int new_sum = Integer.parseInt(spinnerObject.getSum()) + Integer.parseInt(sum_edit_text.getText().toString());
+
+                    spinnerObject.setSum(String.valueOf(new_sum));
+                    args.putParcelable("spinner_object", spinnerObject);
+
+                    getParentFragmentManager().setFragmentResult("change_amount", args);
                 }
             }
         });

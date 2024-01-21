@@ -65,4 +65,7 @@
     <string name="name_sub_category">Название подкатегории</string>
 
     <string name="edit_sum_dialog">Введите сумму на счете</string>
+    <string name="change_sum_dialog_btn">Изменить</string>
+    <string name="delete_item">Удалить</string>
+    <string name="chose_delete_item">Выберите категорию</string>
 </resources>
