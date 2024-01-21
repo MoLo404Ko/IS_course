@@ -157,18 +157,4 @@ public class DialogAddSubCategory extends DialogFragment {
 
         getParentFragmentManager().setFragmentResult("edit_map_of_sub_categories_by", result);
     }
-
-//    /**
-//     * Метод, устанавливающий данные для прослушивателя в FragmentGeneral
-//     * Обновляет сумму для активной категории
-//     */
-//    private void updateSum() {
-//        Bundle result = new Bundle();
-//
-//        int new_sum = Integer.parseInt(sum_edit_text_add_dialog.getText().toString()) + current_sum;
-//        current_sum = new_sum;
-//        result.putInt("new_sum", new_sum);
-//        result.putInt("pos", pos);
-//        getParentFragmentManager().setFragmentResult("fragmentSubKey", result);
-//    }
 }

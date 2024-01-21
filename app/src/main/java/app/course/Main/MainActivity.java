@@ -201,22 +201,6 @@ public class MainActivity extends AppCompatActivity {
             total_sum.setVisibility(View.VISIBLE);
             date_picker_shadow.setVisibility(View.VISIBLE);
             main_fragment.setVisibility(View.VISIBLE);
-
-//            fragmentGeneral = new FragmentGeneral(getBaseContext(), getSupportFragmentManager());
-//
-//            categories_income = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_income");
-//            categories_expense = (ArrayList<CategoryPrepare>)getIntent().getSerializableExtra("categories_expense");
-//            id_categories = getIntent().getIntegerArrayListExtra("id_categories");
-//
-//            Bundle args = new Bundle();
-//
-//            args.putSerializable("categories_income", categories_income);
-//            args.putSerializable("categories_expense", categories_expense);
-//            args.putIntegerArrayList("id_categories", id_categories);
-//            fragmentGeneral.setArguments(args);
-//
-//            fragmentTransaction = getSupportFragmentManager().beginTransaction().replace(R.id.main_fragment, fragmentGeneral);
-//            fragmentTransaction.commit();
         });
 
         getSupportFragmentManager().setFragmentResultListener("change_amount", this,
