@@ -35,15 +35,11 @@ import app.course.authorization.DataBaseHandler;
 
 public class DialogAddSubCategory extends DialogFragment {
     private ImageButton btn_close_dialog_add_sub_category;
-    private ImageView sub_category_date_btn;
     private Button add_sub_category_btn;
     private EditText name_add_sub_category_edit;
     private EditText sum_edit_text_add_dialog;
     private EditText date_edit_text_add_dialog;
 
-    private SimpleDateFormat date_category_format = new SimpleDateFormat("dd-MM-yyyy");
-    private DateFormat date_db_format = new SimpleDateFormat("yyyy-MM-dd");
-    private Date today = new Date();
 
     private DataBaseHandler dataBaseHandler = DataBaseHandler.getDataBaseHadler();
     private Connection connection = null;
@@ -51,8 +47,6 @@ public class DialogAddSubCategory extends DialogFragment {
 
     private String name_category;
     private ArrayList<String> names = new ArrayList<>();
-//    private ArrayList<String> new_names = new ArrayList<>();
-//    private ArrayList<Integer> id_sub_categories = new ArrayList<>();
 
     private Bundle bundle = new Bundle();
     private int id_category = 0;
@@ -100,21 +94,14 @@ public class DialogAddSubCategory extends DialogFragment {
 
                     new Thread(() -> {
                         try {
-                            LocalDate localDate = LocalDate.now();
-                            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-//                            java.sql.Date date = new java.sql.Date(date_category_format.parse(localDate));
-
                             connection = dataBaseHandler.connect(connection);
                             preparedStatement = connection.prepareStatement(Queries.addSubCategory());
 
-                            preparedStatement.setInt(1,id_category);
-                            preparedStatement.setString(2, name_add_sub_category_edit.getText().toString());
-                            preparedStatement.setInt(3, 0);
-                            preparedStatement.setDate(4, java.sql.Date.valueOf(localDate.toString()));
+                            preparedStatement.setInt(1, id_category);
+                            preparedStatement.setInt(2, 0);
+                            preparedStatement.setString(3, name_add_sub_category_edit.getText().toString());
 
                             preparedStatement.executeUpdate();
-
-                            preparedStatement.clearParameters();
                         }
                         catch (SQLException | ClassNotFoundException e) {
                             Log.d("MyLog", e.getMessage());
@@ -139,6 +126,7 @@ public class DialogAddSubCategory extends DialogFragment {
 
     private void init(View view) {
         name_category = bundle.getString("name_category");
+
         id_category = (int)bundle.get("id_category");
         pos = (int)bundle.get("pos");
         current_sum = (int)bundle.get("current_sum");
@@ -160,7 +148,7 @@ public class DialogAddSubCategory extends DialogFragment {
         result.clear();
 
         SubCategory subCategory = new SubCategory(name_add_sub_category_edit.getText().toString(),
-                String.valueOf(LocalDate.now()), "0", id_category);
+                "0", id_category);
 
         result.putInt("key", id_category);
         result.putParcelable("object", subCategory);

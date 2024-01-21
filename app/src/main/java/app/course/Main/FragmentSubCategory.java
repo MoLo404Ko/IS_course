@@ -46,6 +46,8 @@ import java.util.concurrent.Executors;
 import app.course.Queries;
 import app.course.R;
 import app.course.authorization.DataBaseHandler;
+import app.course.category.Category;
+import app.course.category.CategoryPrepare;
 import app.course.sub_category.DialogAddSubCategory;
 import app.course.sub_category.SubAdapter;
 import app.course.sub_category.SubCategory;
@@ -59,6 +61,7 @@ public class FragmentSubCategory extends Fragment {
     private Bundle bundle = new Bundle();
     private ArrayList<Drawable> icons;
     private ArrayList<SubCategory> sub_categories;
+    private CategoryPrepare category;
     private SubAdapter adapter = null;
 
     private ArrayList<String> names;
@@ -87,9 +90,10 @@ public class FragmentSubCategory extends Fragment {
     private int id_category;
     private String name;
 
-    public FragmentSubCategory(ArrayList<Drawable> icons, int pos) {
+    public FragmentSubCategory(ArrayList<Drawable> icons, int pos, CategoryPrepare category) {
         this.icons = icons;
         this.pos = pos;
+        this.category = category;
     }
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -109,12 +113,11 @@ public class FragmentSubCategory extends Fragment {
 
         getParentFragmentManager().setFragmentResultListener("add_sub_key", this,
                 (requestKey, result) -> {
-                    LocalDate date = LocalDate.now();
                     String name = result.getString("name");
                     int id_category = result.getInt("id_category");
 
-                    sub_categories.add(new SubCategory(name, String.valueOf(date), "0", id_category));
-                    adapter = new SubAdapter(getContext(), sub_categories, getParentFragmentManager(), this.getArguments().getString("category_name"));
+                    sub_categories.add(new SubCategory(name, "0", id_category));
+                    adapter = new SubAdapter(getContext(), sub_categories, getParentFragmentManager(), category);
                     sub_categories_recycler.setAdapter(adapter);
 
                     main_category_sum.setText(String.valueOf(current_sum));
@@ -163,7 +166,6 @@ public class FragmentSubCategory extends Fragment {
 
                     Bundle result = new Bundle();
 
-                    result.putSerializable("sub_categories", sub_categories);
                     result.putInt("id_category", id_category);
                     result.putInt("sum", current_sum);
                     result.putInt("pos", pos);
@@ -344,18 +346,14 @@ public class FragmentSubCategory extends Fragment {
 
         if (sub_categories != null) {
             for (SubCategory subCategory: sub_categories) Log.d("MyLog", subCategory.getSum());
-
             Log.d("MyLog", "sub_categories isn't null");
-            adapter = new SubAdapter(getContext(), sub_categories, getParentFragmentManager(),
-                    this.getArguments().getString("category_name"));
         }
 
         else {
             Log.d("MyLog", "sub_categories is null");
             sub_categories = new ArrayList<>();
-            adapter = new SubAdapter(getContext(), sub_categories, getParentFragmentManager(),
-                    this.getArguments().getString("category_name"));
         }
+        adapter = new SubAdapter(getContext(), sub_categories, getParentFragmentManager(), category);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
@@ -364,54 +362,5 @@ public class FragmentSubCategory extends Fragment {
         sub_categories_recycler.setHasFixedSize(false);
         sub_categories_recycler.setItemAnimator(new DefaultItemAnimator());
         sub_categories_recycler.setAdapter(adapter);
-
-//        else {
-//            executorService.execute(() -> {
-//                try {
-//                    sub_categories = new ArrayList<>();
-//                    boolean isFill = false;
-//                    connection = dataBaseHandler.connect(connection);
-//                    preparedStatement = connection.prepareStatement(Queries.getSubCategories());
-//                    preparedStatement.setInt(1, id_category);
-//                    resultSet = preparedStatement.executeQuery();
-//
-//                    while (resultSet.next()) {
-//                        String[] date_parse;
-//                        String ready_date;
-//
-//                        date_parse = resultSet.getDate(3).toString().split("-");
-//                        ready_date = date_parse[2] + "-" + date_parse[1] + "-" + date_parse[0];
-//
-//                        names.add(resultSet.getString(1));
-//                        sum.add(resultSet.getInt(2));
-//                        id_sub_categories.add(resultSet.getInt(4));
-//                        date_last_entry.add(ready_date);
-//                        isFill = true;
-//                    }
-//
-//                    if (isFill) {
-//                        for (int i = 0; i < names.size(); i++) {
-//                            sub_categories.add(new SubCategory(names.get(i), date_last_entry.get(i), String.valueOf(sum.get(i)), id_category));
-//                        }
-//                    }
-//
-//                    handler.post(() -> {
-//                        adapter = new SubAdapter(getContext(), sub_categories, getParentFragmentManager(),
-//                                this.getArguments().getString("category_name"));
-//                        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
-//                        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-//                        sub_categories_recycler.setLayoutManager(linearLayoutManager);
-//                        sub_categories_recycler.setHasFixedSize(false);
-//                        sub_categories_recycler.setItemAnimator(new DefaultItemAnimator());
-//                        sub_categories_recycler.setAdapter(adapter);
-//                    });
-//                }
-//                catch (SQLException | ClassNotFoundException e) {
-//                    Log.d("MyLog", e.getMessage());
-//                    e.printStackTrace();
-//                }
-//            });
-//            executorService.shutdown();
-//        }
     }
 }

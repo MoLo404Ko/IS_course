@@ -46,7 +46,7 @@ public class FragmentHistory extends Fragment {
     private ArrayList<CategoryPrepare> categories;
 
     private HashMap<Integer, ArrayList<SubCategory>> map;
-    private HashMap<LocalDate, ArrayList<SubCategory>> map_of_history;
+    private HashMap<LocalDate, ArrayList<History>> map_of_history;
 
     private ImageButton backBtn;
 
@@ -88,7 +88,7 @@ public class FragmentHistory extends Fragment {
         categories = (ArrayList<CategoryPrepare>) args.getSerializable("categories_income");
 
         for (CategoryPrepare c: categories) {
-            list.add(new History(c.getName_category(), c.getBg_color_category(), c.getIcon_category(), c.getId_category()));
+            list.add(new History(c.getName_category(), c.getBg_color_category(), c.getIcon_category(), c.getId_category(), c.getSum_category()));
         }
 
         return list;
@@ -134,11 +134,11 @@ public class FragmentHistory extends Fragment {
         this.map = map;
     }
 
-    public HashMap<LocalDate, ArrayList<SubCategory>> getMap_of_history() {
+    public HashMap<LocalDate, ArrayList<History>> getMap_of_history() {
         return map_of_history;
     }
 
-    public void setMap_of_history(HashMap<LocalDate, ArrayList<SubCategory>> map_of_history) {
+    public void setMap_of_history(HashMap<LocalDate, ArrayList<History>> map_of_history) {
         this.map_of_history = map_of_history;
     }
 

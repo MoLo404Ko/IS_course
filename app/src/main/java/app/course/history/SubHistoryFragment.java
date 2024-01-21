@@ -51,18 +51,21 @@ public class SubHistoryFragment extends Fragment {
      * Наполняем категории по датам
      * @return
      */
-    private HashMap<LocalDate, ArrayList<SubCategory>> filter_map() {
+    private HashMap<LocalDate, ArrayList<History>> filter_map() {
         Bundle args = this.getArguments();
         int id_category = args.getInt("id_category");
 
         FragmentHistory fragmentHistory = FragmentHistory.getFragmentHistory();
-        HashMap<LocalDate, ArrayList<SubCategory>> map = fragmentHistory.getMap_of_history();
-        HashMap<LocalDate, ArrayList<SubCategory>> filter_map = new HashMap<>();
+        HashMap<LocalDate, ArrayList<History>> map = fragmentHistory.getMap_of_history();
+        HashMap<LocalDate, ArrayList<History>> filter_map = new HashMap<>();
 
+        /**
+         * Перебираются все даты (ключи HashMap)
+         */
         for (LocalDate key: map.keySet()) {
             for (int i = 0; i < map.get(key).size(); i++) {
                 if (map.get(key).get(i).getId_category() == id_category) {
-                    SubCategory object = map.get(key).get(i);
+                    History object = map.get(key).get(i);
                     if (!filter_map.containsKey(key)) {
                         filter_map.put(key, new ArrayList<>());
                         filter_map.get(key).add(object);
@@ -81,10 +84,10 @@ public class SubHistoryFragment extends Fragment {
      * Метод установки подкатегорий
      */
     private void setRecyclerView() {
-        HashMap<LocalDate, ArrayList<SubCategory>> filter_map = filter_map();
+        HashMap<LocalDate, ArrayList<History>> filter_map = filter_map();
 
         ArrayList<LocalDate> key_set = new ArrayList<>(filter_map.keySet());
-        ArrayList<ArrayList<SubCategory>> big_list = new ArrayList<>(filter_map.values());
+        ArrayList<ArrayList<History>> big_list = new ArrayList<>(filter_map.values());
         int general_size = 0;
 
         for (LocalDate key: key_set) {

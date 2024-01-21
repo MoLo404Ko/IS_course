@@ -25,13 +25,13 @@ import app.course.sub_category.SubCategory;
 public class SubHistoryAdapter extends RecyclerView.Adapter<SubHistoryAdapter.MyViewHolder> {
     private Context context;
     private ArrayList<LocalDate> key_set;
-    private ArrayList<ArrayList<SubCategory>> big_list;
+    private ArrayList<ArrayList<History>> big_list;
     private int index = 0;
     private int sub_index = 0;
     private int general_size;
 
     public SubHistoryAdapter(Context context, ArrayList<LocalDate> key_set,
-                             ArrayList<ArrayList<SubCategory>> big_list, int general_size) {
+                             ArrayList<ArrayList<History>> big_list, int general_size) {
         this.context = context;
         this.key_set = key_set;
         this.big_list = big_list;
@@ -68,8 +68,8 @@ public class SubHistoryAdapter extends RecyclerView.Adapter<SubHistoryAdapter.My
         if (sub_index == 0) holder.global_date.setText(String.valueOf(key_set.get(index)));
 
         holder.bg.setBackground(context.getResources().getDrawable(R.drawable.shape_bg_sub_category, context.getTheme()));
-        holder.name.setText(big_list.get(index).get(sub_index).getName());
-        holder.sum.setText(big_list.get(index).get(sub_index).getSum());
+        holder.name.setText(big_list.get(index).get(sub_index).getName_category());
+        holder.sum.setText(String.valueOf(big_list.get(index).get(sub_index).getSum()));
 
         sub_index++;
     }

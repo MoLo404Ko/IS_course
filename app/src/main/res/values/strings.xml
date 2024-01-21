@@ -63,4 +63,6 @@
 
     <string name="add_sub_category">Добавить подкатегорию</string>
     <string name="name_sub_category">Название подкатегории</string>
+
+    <string name="edit_sum_dialog">Введите сумму на счете</string>
 </resources>

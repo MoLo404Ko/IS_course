@@ -31,6 +31,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -50,6 +51,8 @@ import app.course.authorization.DataBaseHandler;
 import app.course.category.Category;
 import app.course.category.CategoryPrepare;
 import app.course.category.CategoryAdapter;
+import app.course.history.History;
+import app.course.spinner.SpinnerObject;
 import app.course.sub_category.SubCategory;
 
 public class FragmentGeneral extends Fragment {
@@ -95,8 +98,10 @@ public class FragmentGeneral extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+
         getParentFragmentManager().setFragmentResultListener("update_id_categories", this,
                 (requestKey, result) -> {
+
             ArrayList<Integer> id_categories = result.getIntegerArrayList("id_categories");
             ArrayList<String> names = result.getStringArrayList("names");
             ArrayList<CategoryPrepare> temp = new ArrayList<>();
@@ -110,20 +115,28 @@ public class FragmentGeneral extends Fragment {
                 }
             }
 
-            for (int i = 0; i < temp.size(); i++)
-                temp.get(i).setId_category(id_categories.get(i));
+            if (temp.size() != 0) {
+                for (int i = 0; i < temp.size(); i++)
+                    temp.get(i).setId_category(id_categories.get(i));
+            }
 
                 });
 
+        /**
+         * В прослушивателе устанавливается дата для доходов и расходов после фильтрации по дате
+         */
         getParentFragmentManager().setFragmentResultListener("changedDate", this,
                 (requestKey, result) -> {
             handler.post(() -> {
                 ArrayList<Integer> amounts = result.getIntegerArrayList("amounts");
                 ArrayList<String> names = result.getStringArrayList("names");
-                int sumIndex = 0;
+
+                Log.d("MyLog", amounts.size() + " size");
+                Log.d("MyLog", names.size() + " size");
+
                 int generalSum = 0;
 
-                if (names.size() == 0) {
+                if (names == null) {
                     for (int i = 0; i < categories_income.size(); i++)
                         categories_income.get(i).setSum_category(0);
 
@@ -131,22 +144,22 @@ public class FragmentGeneral extends Fragment {
                 }
 
                 else {
+                    int filter_sum_category;
                     boolean isHas;
 
-                    for (int index = 0; index < categories_income.size(); index++) {
+                    for (int i = 0; i < categories_income.size(); i++) {
+                        filter_sum_category = 0;
                         isHas = false;
-                        for (String name: names) {
-                            if (categories_income.get(index).getName_category().equals(name)) {
-                                categories_income.get(index).setSum_category(amounts.get(sumIndex));
-                                generalSum += amounts.get(sumIndex);
-                                names.remove(name);
 
-                                sumIndex++;
+                        for (int j = 0; j < names.size(); j++) {
+                            if (categories_income.get(i).getName_category().equals(names.get(j))) {
                                 isHas = true;
-                                break;
+                                filter_sum_category += amounts.get(j);
                             }
                         }
-                        if (!isHas) categories_income.get(index).setSum_category(0);
+
+                        if (!isHas) categories_income.get(i).setSum_category(0);
+                        else categories_income.get(i).setSum_category(filter_sum_category);
                     }
 
                     incomes_text.setText(String.valueOf(generalSum));
@@ -154,65 +167,54 @@ public class FragmentGeneral extends Fragment {
 
                 updatePercent(categories_income);
                 categories_income_adapter.notifyDataSetChanged();
+
+                MainActivity mainActivity = MainActivity.getMainActivity();
+                mainActivity.updatePieChart(mainActivity.getPieChart(), mainActivity.getCategories_income());
             });
                 });
 
         getParentFragmentManager().setFragmentResultListener("result_sum", this,
                 (requestKey, result) -> {
                     Bundle args = new Bundle();
+
                     int pos = result.getInt("pos");
-                    int id_category = result.getInt("id_category");
+                    int sum = result.getInt("sum");
+                    int diff_sum = sum - categories_income_prepare.get(pos).getSum_category();
 
-                    sub_categories = result.getParcelableArrayList("sub_categories");
-
-                    hash_map_categories.put(id_category, sub_categories);
+                    args.putInt("sum", diff_sum);
+                    args.putBoolean("action", true);
 
                     handler.post(() -> {
-                        int sum = 0;
-                        int diff_sum = 0;
+                        new Thread(() -> {
 
-                        if (MainActivity.date.equals("Все время")) {
-                            sum = result.getInt("sum");
-                            diff_sum = sum - categories_income_prepare.get(pos).getSum_category();
-                            Log.d("MyLog", diff_sum + " diff_sum");
-                            args.putInt("sum", diff_sum);
-                            args.putBoolean("action", true);
-
-                            getParentFragmentManager().setFragmentResult("change_diff_sum", args);
-                        }
-
-                        else {
-                            String[] date_range = MainActivity.date.split(":");
-
-                            if (date_range.length == 1) {
-                                for (SubCategory s: sub_categories) {
-                                    if (s.getDate_last_entry().equals(date_range[0])) sum += Integer.parseInt(s.getSum());
-                                }
-
-                                diff_sum = sum - categories_income_prepare.get(pos).getSum_category();
-                                args.putInt("sum", diff_sum);
-                                args.putBoolean("action", true);
+                            handler.post(() -> {
                                 getParentFragmentManager().setFragmentResult("change_diff_sum", args);
+                            });
+
+                            Connection conn = null;
+                            try {
+                                conn = dataBaseHandler.connect(conn);
+
+                                preparedStatement = conn.prepareStatement(Queries.updateSumOfCategory());
+
+                                preparedStatement.setInt(1, sum);
+                                preparedStatement.setInt(2, categories_income_prepare.get(pos).getId_category());
+                                preparedStatement.executeUpdate();
                             }
-
-                            if (date_range.length == 2) {
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-
-                                LocalDate first_date = LocalDate.parse(date_range[0], formatter);
-                                LocalDate second_date = LocalDate.parse(date_range[1], formatter);
-
-                                for (SubCategory s: sub_categories) {
-                                    LocalDate date = LocalDate.parse(s.getDate_last_entry(), formatter);
-                                    if ((date.isAfter(first_date) || date.isEqual(first_date)) &&
-                                            (date.isBefore(second_date) || date.isEqual(second_date))) {
-                                        diff_sum = sum - categories_income_prepare.get(pos).getSum_category();
-                                        args.putInt("sum", diff_sum);
-                                        args.putBoolean("action", true);
-                                        getParentFragmentManager().setFragmentResult("change_diff_sum", args);
-                                    }
+                            catch (SQLException | ClassNotFoundException e) {
+                                Log.d("MyLog", e.getMessage());
+                                e.printStackTrace();
+                            }
+                            finally {
+                                try {
+                                    if (conn != null) dataBaseHandler.closeConnect(conn);
+                                    if (preparedStatement != null) preparedStatement.close();
+                                    if (resultSet != null) resultSet.close();
+                                } catch (SQLException e) {
+                                    throw new RuntimeException(e);
                                 }
                             }
-                        }
+                        }).start();
 
                         categories_income.get(pos).setSum_category(sum);
                         categories_income_prepare.get(pos).setSum_category(sum);
@@ -446,8 +448,8 @@ public class FragmentGeneral extends Fragment {
                             else removed_names_items += "\'" + removed_categories.get(i) + "\'" + ",";
                         }
 
-                        String query = "DELETE FROM category_income where id_user = " + User.getUser().getID_user() +
-                                " and name_category in (" + removed_names_items +")";
+                        String query = "DELETE FROM income where id_user = " + User.getUser().getID_user() +
+                                " and name_income in (" + removed_names_items +")";
 
                         connection = dataBaseHandler.connect(connection);
                         preparedStatement = connection.prepareStatement(query);
@@ -695,7 +697,7 @@ public class FragmentGeneral extends Fragment {
     private class GetIdAccountTask implements Callable<Integer> {
         private int id_account;
         private MainActivity mainActivity = MainActivity.getMainActivity();
-        private String name = (String) mainActivity.getDropDown().getSelectedItem();
+        private String name = ((SpinnerObject) mainActivity.getDropDown().getSelectedItem()).getName();
         @Override
         public Integer call() throws Exception {
             DataBaseHandler db = DataBaseHandler.getDataBaseHadler();

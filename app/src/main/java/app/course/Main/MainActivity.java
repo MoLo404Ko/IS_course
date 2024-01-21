@@ -66,11 +66,14 @@ import app.course.authorization.DataBaseHandler;
 import app.course.category.Category;
 import app.course.category.CategoryPrepare;
 import app.course.history.FragmentHistory;
+import app.course.history.History;
 import app.course.income.FragmentIncome;
 import app.course.menu_fragments.AmountsFragment;
 import app.course.menu_fragments.CategoryFragment;
 import app.course.menu_fragments.HomeFragment;
 import app.course.menu_fragments.SettingsFragment;
+import app.course.spinner.SpinnerAdapter;
+import app.course.spinner.SpinnerObject;
 import app.course.sub_category.SubCategory;
 
 
@@ -120,14 +123,12 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<Drawable> icons_income;
     private ArrayList<Integer> id_categories = new ArrayList<>();
     private String full_date = "";
-    private String request_date_first = "";
-    private String request_date_second = "";
 
     public static String date;
     private ArrayList<SubCategory>[] save_array = new ArrayList[1];
 
     private static HashMap<Integer, ArrayList<SubCategory>> map_of_sub_categories;
-    private static HashMap<LocalDate, ArrayList<SubCategory>> map_of_history;
+    private static HashMap<LocalDate, ArrayList<History>> map_of_history;
     private Context context;
 
     private NavigationBarView.OnItemSelectedListener listener_nav = item -> {
@@ -282,25 +283,63 @@ public class MainActivity extends AppCompatActivity {
             throw new RuntimeException(e);
         }
 
+        /**
+         * Прослушиватель добавления обхекта истории в HashMap
+         */
         getSupportFragmentManager().setFragmentResultListener("addNewItemHistory", this,
                 (requestKey, result) -> {
-                    SubCategory object = (SubCategory) result.getParcelable("object");
+
+                    History history_object = (History) result.getParcelable("object");
+                    String date = result.getString("date_entry");
+
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-                    LocalDate key = LocalDate.parse(object.getDate_last_entry(), formatter);
+                    LocalDate key = LocalDate.parse(date, formatter);
 
                     if (map_of_history.containsKey(key)) {
-                        Log.d("MyLog", "hasKey");
-                        Objects.requireNonNull(map_of_history.get(key)).add(object);
+                        Objects.requireNonNull(map_of_history.get(key)).add(history_object);
                     }
                     else {
-                        Log.d("MyLog", "hasn'tKey");
-                        ArrayList<SubCategory> list = new ArrayList<>();
-                        list.add(object);
+                        ArrayList<History> list = new ArrayList<>();
+                        list.add(history_object);
                         map_of_history.put(key, list);
                     }
 
                     mainActivity.setMap_of_history(map_of_history);
+
+                    new Thread(() -> {
+                        Connection conn = null;
+                        PreparedStatement st = null;
+                        DataBaseHandler dataBaseHandler = DataBaseHandler.getDataBaseHadler();
+
+                        LocalDate localDate = LocalDate.parse(date, formatter);
+                        java.sql.Date date_sql = java.sql.Date.valueOf(String.valueOf(localDate));
+
+                        try {
+                            conn = dataBaseHandler.connect(conn);
+
+                            st = conn.prepareStatement(Queries.addHistoryItem());
+                            st.setDate(1, date_sql);
+                            st.setString(2, history_object.getName_category());
+                            st.setInt(3, history_object.getSum());
+                            st.setInt(4, history_object.getId_category());
+
+                            st.executeUpdate();
+                        }
+                        catch (SQLException | ClassNotFoundException e) {
+                            Log.d("MyLog", e.getMessage());
+                            e.printStackTrace();
+                        }
+                        finally {
+                            try {
+                                if (conn != null) dataBaseHandler.closeConnect(conn);
+                                if (st != null) st.close();
+                            }
+                            catch (SQLException e) {
+                                Log.d("MyLog", e.getMessage());
+                            }
+                        }
+                    }).start();
                 });
 
         setOnClickHistoryBtn();
@@ -410,28 +449,25 @@ public class MainActivity extends AppCompatActivity {
     private void setDropDown() {
         dropDown = findViewById(R.id.amounts_drop_down);
 
-        List<String> amounts;
-        amounts = extras.getStringArrayList("amounts");
+        SpinnerObject spinnerObject = new SpinnerObject("Основной счет", "0");
+        SpinnerObject[] array = new SpinnerObject[1];
+        array[0] = spinnerObject;
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, amounts);
-
-        adapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item);
-
+        SpinnerAdapter adapter = new SpinnerAdapter(this, R.layout.amount_adapter, array);
         dropDown.setAdapter(adapter);
+
         mainActivity.setDropDown(dropDown);
     }
     // ---------------------------------------------------------------------------------------------
 
     private void setDatePicker(View view, Dialog dialog) {
-        request_date_first = "";
-        request_date_second = "";
-
         switch (view.getId()) {
             case R.id.range_btn: {
                 DatePickerDialog firstDate = new DatePickerDialog(MainActivity.this);
 
                 firstDate.setOnDateSetListener((dateP, i, i1, i2) -> {
+                    String date_first;
+
                     String month1 = "";
                     String day1 = "";
 
@@ -441,12 +477,14 @@ public class MainActivity extends AppCompatActivity {
                     if (i2 < 10) day1 = "0" + i2;
                     else day1 = String.valueOf(i2);
 
-                    request_date_first = i + "-" + (i1 + 1) + "-" + i2;
                     full_date += day1 + "-" + month1 + "-" + i + ":";
+                    date_first = i + "-" + month1 + "-" + day1;
 
                     DatePickerDialog secondDate = new DatePickerDialog(MainActivity.this);
 
                     secondDate.setOnDateSetListener((dateP1, year, i11, i21) -> {
+                        String date_second;
+
                         String month2 = "";
                         String day2 = "";
 
@@ -456,11 +494,11 @@ public class MainActivity extends AppCompatActivity {
                         if (i21 < 10) day2 = "0" + i21;
                         else day2 = String.valueOf(i21);
 
-                        request_date_second = year + "-" + (i11 + 1) + "-" + i21;
+                        date_second = year + "-" + month2 + "-" + day2;
                         full_date += day2 + "-" + month2 + "-" + year;
                         datePicker.setText(full_date);
 
-                        setSumOfCategory(0);
+                        setSumOfCategory(0, date_first, date_second);
                         MainActivity.date = full_date;
                         full_date = "";
                     });
@@ -476,6 +514,7 @@ public class MainActivity extends AppCompatActivity {
                 datePickerDialog.setOnDateSetListener((dateP, i, i1, i2) -> {
                     String month = "";
                     String day = "";
+                    String date_first;
 
                     if (i1 + 1 < 10) month = "0" + (i1 + 1);
                     else month = String.valueOf(i1 + 1);
@@ -483,9 +522,9 @@ public class MainActivity extends AppCompatActivity {
                     if (i2 < 10) day = "0" + i2;
                     else day = String.valueOf(i2);
 
-                    request_date_first += i + "-" + (i1 + 1) + "-" + i2;
+                    date_first = i + "-" + month + "-" + day;
                     datePicker.setText(day + "-" + month + "-" + i);
-                    setSumOfCategory(1);
+                    setSumOfCategory(1, date_first, "");
 
                     MainActivity.date = day + "-" + month + "-" + i;
                 });
@@ -496,9 +535,8 @@ public class MainActivity extends AppCompatActivity {
 
             case R.id.all_time_btn: {
                 datePicker.setText("Все время");
-                setSumOfCategory(5);
+                setSumOfCategory(5, "", "");
                 MainActivity.date = "Все время";
-
 
                 break;
             }
@@ -569,6 +607,8 @@ public class MainActivity extends AppCompatActivity {
                 pieChart.addPieSlice(model);
             }
         }
+
+        mainActivity.setCategories_income(categories_income);
     }
 
     public void updatePieChart(PieChart pieChart, ArrayList<CategoryPrepare> categories)
@@ -602,7 +642,9 @@ public class MainActivity extends AppCompatActivity {
         mainActivity.set_PieChart(pieChart);
 
         pieChart.update();
+        mainActivity.setCategories_income(categories);
     }
+
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
@@ -631,87 +673,82 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    private void setSumOfCategory(int index) {
-        new Thread(() -> {
-            Connection connection = null;
-            PreparedStatement preparedStatement = null;
-            ResultSet resultSet = null;
-
-            ArrayList<String> names = new ArrayList<>();
-            ArrayList<Integer> amounts = new ArrayList<>();
-            Bundle dateArgs = new Bundle();
-
-            try {
-                connection = db.connect(connection);
+    private void setSumOfCategory(int index, String date_first, String date_second) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate key_date_first;
+        LocalDate key_date_second;
 
                 switch (index) {
                     case 0: {
-                        preparedStatement = connection.prepareStatement(Queries.getSumForRange());
-                        preparedStatement.setInt(1, User.getUser().getID_user());
-                        preparedStatement.setString(2, request_date_first);
-                        preparedStatement.setString(3, request_date_second);
+                        ArrayList<History> all_history_list = new ArrayList<>();
 
-                        resultSet = preparedStatement.executeQuery();
+                        key_date_first = LocalDate.parse(date_first, formatter);
+                        key_date_second = LocalDate.parse(date_second, formatter);
 
-                        setArgsForChangedDate(resultSet, names, amounts, dateArgs);
+                        for (LocalDate key: map_of_history.keySet()) {
+                            if ((key_date_first.isBefore(key) || key_date_first.isEqual(key)) &&
+                                    (key_date_second.isAfter(key) || key_date_second.isEqual(key))) {
+                                Log.d("MyLog", "hih");
+                                all_history_list.addAll(map_of_history.get(key));
+                            }
+                        }
+
+                        setArgsForChangedDate(all_history_list);
                         break;
                     }
 
                     case 1: {
-                        preparedStatement = connection.prepareStatement(Queries.getSumForOneDay());
-                        preparedStatement.setInt(1, User.getUser().getID_user());
-                        preparedStatement.setString(2, request_date_first);
+                        key_date_first = LocalDate.parse(date_first, formatter);
+                        map_of_history.get(key_date_first);
 
-                        resultSet = preparedStatement.executeQuery();
-
-                        setArgsForChangedDate(resultSet, names, amounts, dateArgs);
+                        setArgsForChangedDate(map_of_history.get(key_date_first));
                         break;
                     }
 
                     case 5: {
-                        preparedStatement = connection.prepareStatement(Queries.getSumForAllTime());
-                        preparedStatement.setInt(1, User.getUser().getID_user());
-                        resultSet = preparedStatement.executeQuery();
-
-                        setArgsForChangedDate(resultSet, names, amounts, dateArgs);
+                        ArrayList<History> all_history_list = new ArrayList<>();
+                        for (LocalDate key: map_of_history.keySet()) {
+                            all_history_list.addAll(map_of_history.get(key));
+                        }
+                        setArgsForChangedDate(all_history_list);
                         break;
                     }
 
                 }
-            }
-            catch (SQLException | ClassNotFoundException e) {
-                Log.d("MyLog", e.getMessage());
-                e.getStackTrace();
-            } finally {
-                try {
-                    if (connection != null) db.closeConnect(connection);
-                    if (preparedStatement != null) preparedStatement.close();
-                    if (resultSet != null) resultSet.close();
-                }
-                catch (SQLException e) {
-                    Log.d("MyLog", e.getMessage());
-                    e.printStackTrace();
-                }
-            }
-        }).start();
     }
 
-    private void setArgsForChangedDate(ResultSet resultSet, ArrayList<String> names, ArrayList<Integer> amounts, Bundle dateArgs) throws SQLException {
-        while (resultSet.next()) {
-            amounts.add(resultSet.getInt(2));
-            names.add(resultSet.getString(1));
-        }
 
-        dateArgs.putIntegerArrayList("amounts", amounts);
-        dateArgs.putStringArrayList("names", names);
-
-        getSupportFragmentManager().setFragmentResult("changedDate", dateArgs);
-
-
+    /**
+     * Метод·для изменения сумм доходов и расходов по дате
+     * Извлекает из списка суммы и имена доходов или расходов, даты внесения которых удовлетворяют
+     * выбранному промежутку
+     * @param list_of_history
+     * @throws SQLException
+     */
+    private void setArgsForChangedDate(ArrayList<History> list_of_history) {
         handler.post(() -> {
+            Bundle args = new Bundle();
             int general_sum = 0;
-            for (Integer amount: amounts) general_sum += amount;
+
+            ArrayList<Integer> sum_of_category = new ArrayList<>();
+            ArrayList<String> name_of_category = new ArrayList<>();
+
+            if (list_of_history != null) {
+                for (int i = 0; i < list_of_history.size(); i++) {
+                    History object = list_of_history.get(i);
+
+                    sum_of_category.add(object.getSum());
+                    name_of_category.add(object.getName_category());
+
+                    general_sum += sum_of_category.get(i);
+                }
+
+                args.putStringArrayList("names", name_of_category);
+                args.putIntegerArrayList("amounts", sum_of_category);
+            }
+
             total_sum.setText(general_sum + "$");
+            getSupportFragmentManager().setFragmentResult("changedDate", args);
         });
     }
 
@@ -799,7 +836,7 @@ public class MainActivity extends AppCompatActivity {
 
                     if (resultSet.isBeforeFirst()) {
                         while (resultSet.next()) sub_categories.add(new SubCategory(resultSet.getString(1),
-                                resultSet.getString(3), resultSet.getString(2), resultSet.getInt(4)));
+                                resultSet.getString(2), resultSet.getInt(3)));
                     }
                 }
             }
@@ -869,10 +906,10 @@ public class MainActivity extends AppCompatActivity {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    private HashMap<LocalDate, ArrayList<SubCategory>> get_map_of_history() throws ExecutionException, InterruptedException {
+    private HashMap<LocalDate, ArrayList<History>> get_map_of_history() throws ExecutionException, InterruptedException {
         map_of_history = new HashMap<>();
         ExecutorService es = Executors.newSingleThreadExecutor();
-        Future<HashMap<LocalDate, ArrayList<SubCategory>>> future = es.submit(new GetMapOfHistoryTask(map_of_history, categories_income));
+        Future<HashMap<LocalDate, ArrayList<History>>> future = es.submit(new GetMapOfHistoryTask(map_of_history, categories_income));
 
         es.shutdown();
         return future.get();
@@ -881,49 +918,43 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Задача получения истории ввода
      */
-    private static class GetMapOfHistoryTask implements Callable<HashMap<LocalDate, ArrayList<SubCategory>>> {
-        private HashMap<LocalDate, ArrayList<SubCategory>> map_of_history;
+    private static class GetMapOfHistoryTask implements Callable<HashMap<LocalDate, ArrayList<History>>> {
+        private HashMap<LocalDate, ArrayList<History>> map_of_history;
         private ArrayList<CategoryPrepare> categories_income;
         private Connection connection = null;
         private PreparedStatement preparedStatement = null;
         private ResultSet resultSet = null;
         private String part_of_query = "";
         private DataBaseHandler db = DataBaseHandler.getDataBaseHadler();
-        public GetMapOfHistoryTask(HashMap<LocalDate, ArrayList<SubCategory>> map_of_history, ArrayList<CategoryPrepare> categories_income) {
+        public GetMapOfHistoryTask(HashMap<LocalDate, ArrayList<History>> map_of_history, ArrayList<CategoryPrepare> categories_income) {
             this.map_of_history = map_of_history;
             this.categories_income = categories_income;
         }
 
+        /**
+         * Выполняется запрос, по которому идет наполнение HashMap, где ключ - дата ввода суммы, а значение -
+         * список всех историй ввода по доходу/расохду
+         * @return
+         * @throws Exception
+         */
         @Override
-        public HashMap<LocalDate, ArrayList<SubCategory>> call() throws Exception {
-
+        public HashMap<LocalDate, ArrayList<History>> call() throws Exception {
             connection = db.connect(connection);
 
-            for (int i = 0; i < categories_income.size(); i++) {
-                if (i != categories_income.size() - 1) part_of_query +=
-                        "\'" + categories_income.get(i).getName_category() + "\',";
-                else part_of_query += "\'" + categories_income.get(i).getName_category() + "\'";
-            }
+            preparedStatement = connection.prepareStatement(Queries.getHistoryMapIncome());
+            preparedStatement.setInt(1, User.getUser().getID_user());
 
-            if (!part_of_query.isEmpty()) {
-                preparedStatement = connection.prepareStatement(Queries.getHistoryMapIncome(part_of_query));
-                preparedStatement.setInt(1, User.getUser().getID_user());
+            resultSet = preparedStatement.executeQuery();
 
-                resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                LocalDate key = resultSet.getDate(1).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-                while (resultSet.next()) {
-
-                    LocalDate key = resultSet.getDate(5).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-                    if (map_of_history.containsKey(key)) {
-                        map_of_history.get(key).add(new SubCategory(resultSet.getString(1), resultSet.getString(3),
-                                resultSet.getString(2), resultSet.getInt(4)));
-                    }
-                    else {
-                        map_of_history.put(key, new ArrayList<>());
-                        map_of_history.get(key).add(new SubCategory(resultSet.getString(1), resultSet.getString(3),
-                                resultSet.getString(2), resultSet.getInt(4)));
-                    }
+                if (!map_of_history.containsKey(key)) {
+                    map_of_history.put(key, new ArrayList<>());
                 }
+
+                map_of_history.get(key).add(new History(resultSet.getString(2), resultSet.getString(4),
+                        resultSet.getInt(5), resultSet.getInt(6), resultSet.getInt(3)));
             }
 
             mainActivity.setMap_of_history(map_of_history);
@@ -1000,11 +1031,11 @@ public class MainActivity extends AppCompatActivity {
         return mainActivity;
     }
 
-    public static void setMap_of_history(HashMap<LocalDate, ArrayList<SubCategory>> map_of_history) {
+    public static void setMap_of_history(HashMap<LocalDate, ArrayList<History>> map_of_history) {
         MainActivity.map_of_history = map_of_history;
     }
 
-    public static HashMap<LocalDate, ArrayList<SubCategory>> getMap_of_history() {
+    public static HashMap<LocalDate, ArrayList<History>> getMap_of_history() {
         return map_of_history;
     }
 
@@ -1038,5 +1069,13 @@ public class MainActivity extends AppCompatActivity {
 
     public void setContext(Context context) {
         this.context = context;
+    }
+
+    public ArrayList<CategoryPrepare> getCategories_income() {
+        return categories_income;
+    }
+
+    public void setCategories_income(ArrayList<CategoryPrepare> categories_income) {
+        this.categories_income = categories_income;
     }
 }

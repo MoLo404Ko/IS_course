@@ -1,47 +1,37 @@
 package app.course.sub_category;
 
 import android.content.Context;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
-import java.util.List;
 
-import app.course.ColorAdapter;
-import app.course.DialogAddIncomeCategory;
 import app.course.R;
 import app.course.category.Category;
+import app.course.category.CategoryPrepare;
 
 
 public class SubAdapter extends RecyclerView.Adapter<SubAdapter.MyViewHolder> {
-    private ArrayList<SubCategory> categories;
+    private ArrayList<SubCategory> sub_categories;
+    private CategoryPrepare category;
     private Context context;
     private FragmentManager fragmentManager;
-    private String name_category;
 
-    public SubAdapter(Context context, ArrayList<SubCategory> categories, FragmentManager fragmentManager, String name) {
-        this.categories = categories;
+
+    public SubAdapter(Context context, ArrayList<SubCategory> sub_categories, FragmentManager fragmentManager, CategoryPrepare category) {
+        this.sub_categories = sub_categories;
         this.context = context;
         this.fragmentManager = fragmentManager;
-        this.name_category = name;
+        this.category = category;
     }
 
     @NonNull
@@ -54,20 +44,29 @@ public class SubAdapter extends RecyclerView.Adapter<SubAdapter.MyViewHolder> {
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
         holder.constraintLayout.setBackground(context.getResources().getDrawable(R.drawable.shape_bg_sub_category, context.getTheme()));
-        holder.category_name.setText(categories.get(position).getName());
-        holder.category_sum.setText(categories.get(position).getSum());
-        holder.category_date.setText(categories.get(position).getDate_last_entry());
+        holder.category_name.setText(sub_categories.get(position).getName());
+        holder.category_sum.setText(sub_categories.get(position).getSum());
 
         holder.constraintLayout.setOnClickListener(view -> {
             DialogAddSum dialogAddSum = new DialogAddSum();
             Bundle args = new Bundle();
 
-            args.putParcelable("object", categories.get(position));
+            args.putParcelable("category", category);
+            args.putParcelable("object", sub_categories.get(position));
             args.putInt("pos", position);
-            args.putString("category_name", name_category);
-            args.putParcelableArrayList("categories", categories);
+            args.putParcelableArrayList("categories", sub_categories);
             args.putString("sub_category_name", String.valueOf(holder.category_name.getText().toString()));
             args.putInt("sub_category_sum", Integer.parseInt(holder.category_sum.getText().toString()));
+
+            Log.d("MyLog", "----------------");
+
+            Log.d("MyLog", category.getSum_category() + " sum");
+            Log.d("MyLog", sub_categories.get(position).getSum() + " sub_sum");
+            Log.d("MyLog", position + " pos");
+
+
+            Log.d("MyLog", "----------------");
+
 
             dialogAddSum.setArguments(args);
             dialogAddSum.show(fragmentManager, "tag");
@@ -76,7 +75,7 @@ public class SubAdapter extends RecyclerView.Adapter<SubAdapter.MyViewHolder> {
 
     @Override
     public int getItemCount() {
-        return categories.size();
+        return sub_categories.size();
     }
 
     public static class MyViewHolder extends RecyclerView.ViewHolder {

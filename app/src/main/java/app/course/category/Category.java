@@ -4,7 +4,9 @@ import android.graphics.drawable.Drawable;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-public class Category {
+import androidx.annotation.NonNull;
+
+public class Category implements Parcelable {
     private Drawable bg_color_category;
     private Drawable icon_category;
     private int sum_category;
@@ -19,6 +21,24 @@ public class Category {
         this.category_procent = category_procent;
         this.name_category = name_category;
     }
+
+    protected Category(Parcel in) {
+        sum_category = in.readInt();
+        category_procent = in.readString();
+        name_category = in.readString();
+    }
+
+    public static final Creator<Category> CREATOR = new Creator<Category>() {
+        @Override
+        public Category createFromParcel(Parcel in) {
+            return new Category(in);
+        }
+
+        @Override
+        public Category[] newArray(int size) {
+            return new Category[size];
+        }
+    };
 
     public Drawable getBg_color_category() {
         return bg_color_category;
@@ -49,4 +69,15 @@ public class Category {
         this.category_procent = category_procent;
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(@NonNull Parcel parcel, int i) {
+        parcel.writeInt(sum_category);
+        parcel.writeString(category_procent);
+        parcel.writeString(name_category);
+    }
 }

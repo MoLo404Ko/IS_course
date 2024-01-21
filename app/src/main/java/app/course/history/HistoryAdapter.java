@@ -4,12 +4,10 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -23,8 +21,6 @@ import java.util.HashMap;
 
 import app.course.Constants;
 import app.course.R;
-import app.course.add_new_item.NewItemAdapter;
-import app.course.category.CategoryAdapter;
 import app.course.category.CategoryPrepare;
 import app.course.sub_category.SubCategory;
 
@@ -66,7 +62,7 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.MyViewHo
 
         holder.bg.setBackground(item);
         holder.icon.setBackground(icon);
-        holder.name.setText(list.get(position).getName_sub_category());
+        holder.name.setText(list.get(position).getName_category());
 
         holder.bg.setOnClickListener(view -> {
             Bundle args = new Bundle();

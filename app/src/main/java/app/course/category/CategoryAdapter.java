@@ -84,7 +84,7 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.MyView
                 }
             }
 
-            FragmentSubCategory fragmentSubCategory = new FragmentSubCategory(icons, position);
+            FragmentSubCategory fragmentSubCategory = new FragmentSubCategory(icons, position, categories_income_prepare.get(position));
             FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction().
                     replace(R.id.sub_fragment, fragmentSubCategory);
 

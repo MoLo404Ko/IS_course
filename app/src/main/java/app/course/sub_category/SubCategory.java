@@ -14,20 +14,17 @@ import java.util.ArrayList;
 public class SubCategory extends BaseAdapter implements Parcelable  {
     private String name;
     private String sum;
-    private String date_last_entry;
     private int id_category;
 
-    public SubCategory(String name, String date_last_entry, String sum, int id_category) {
+    public SubCategory(String name, String sum, int id_category) {
         this.name = name;
         this.sum = sum;
-        this.date_last_entry = date_last_entry;
         this.id_category = id_category;
     }
 
     protected SubCategory(Parcel in) {
         name = in.readString();
         sum = in.readString();
-        date_last_entry = in.readString();
         id_category = in.readInt();
     }
 
@@ -51,9 +48,6 @@ public class SubCategory extends BaseAdapter implements Parcelable  {
         this.name = name;
     }
 
-    public String getDate_last_entry() {
-        return date_last_entry;
-    }
 
     public String getSum() {
         return sum;
@@ -74,7 +68,6 @@ public class SubCategory extends BaseAdapter implements Parcelable  {
     public void writeToParcel(@NonNull Parcel parcel, int i) {
         parcel.writeString(name);
         parcel.writeString(sum);
-        parcel.writeString(date_last_entry);
         parcel.writeInt(id_category);
     }
 

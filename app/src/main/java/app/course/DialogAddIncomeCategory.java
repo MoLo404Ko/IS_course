@@ -166,6 +166,7 @@ public class DialogAddIncomeCategory extends DialogFragment {
      */
     private void addCategory() {
         String color = colors.get(dialogAddIncomeCategory.getIndex_color());
+
         result.putString("color", color);
         result.putInt("icon", id_icon);
         result.putString("name", name_add_category_income_edit.getText().toString());

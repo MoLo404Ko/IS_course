@@ -40,154 +40,80 @@ public class Queries {
                 "accounts.name_accounts = ?";
         return query;
     }
-    public static String setDefaultAmounts() {
-        String query = "INSERT INTO accounts (ID_user, name_accounts, sum, ID_currency) VALUES (?, ?, ?, ?)";
-        return query;
-    }
 
-    public static String getSumForOneDay() {
-        String query = "SELECT history_income.name_category, SUM(sum) FROM history_income WHERE ID_user = ? and " +
-                "date_last_entry = ? GROUP BY history_income.name_category";
-
-        return query;
-    }
-
-    public static String getSumForRange() {
-        String query = "SELECT history_income.name_category, SUM(sum) FROM history_income WHERE ID_user = ? and " +
-                "date_last_entry BETWEEN ? and ? GROUP BY history_income.name_category";
-
-        return query;
-    }
-
-    public static String getSumForAllTime() {
-        String query = "SELECT history_income.name_category, SUM(sum) FROM history_income WHERE ID_user = ? " +
-                "GROUP BY history_income.name_category";
-
-        return query;
-    }
-
-    public static String getHistoryMapIncome(String part_of_query) {
-        String query = "SELECT sub_category_income.name_sub_category, history_income.sum, sub_category_income.date_last_entry, " +
-                "ID_category, history_income.date_last_entry FROM sub_category_income, history_income " +
-                "WHERE ID_user = ? and sub_category_income.name_sub_category = history_income.name_sub_category and " +
-                "name_category IN (" + part_of_query + ") ORDER BY history_income.date_last_entry";
+    public static String getHistoryMapIncome() {
+        String query = "SELECT date_entry, history_income.name_income, sum, bg_income, income_icon, income.ID_income FROM history_income, income WHERE history_income.id_income = " +
+                "income.ID_income and ID_user = ?";
         return query;
     }
     /* -------------------------------------------------------------------------------------------*/
 
     /* --------------------------------------- FRAGMENT GENERAL ----------------------------------*/
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ОБЪЕДИНИТЬ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
     public static String getCategoryIncome() {
-        String query = "SELECT category_sum, name_category, category_icon, bg_category, ID_category " +
-                "FROM category_income where ID_user = ?";
+        String query = "SELECT income_sum, name_income, income_icon, bg_income, ID_income " +
+                "FROM income where ID_user = ?";
         return query;
     }
 
     public static String getCategoryExpense() {
-        String query = "SELECT category_sum, name_category, category_icon, bg_category " +
-                "FROM category_expense where ID_user = ?";
-        return query;
-    }
-
-    public static String removeIncomeCategory() {
-        String query = "DELETE FROM category_income where id_user = ? and name_category in (?)";
-        return query;
-    }
-
-    public static String getNewCategoryId() {
-        String query = "SELECT ID_category FROM category_income WHERE ID_user = ? and name_category = ?";
-        return query;
-    }
-    // --------------------------------------------------------------------------------------------
-
-    public static String setDefaultCategoryIncome(User user, String name_1, String name_2, String name_3,
-                                                  int icon_1, int icon_2, int icon_3, String bg_1, String bg_2, String bg_3) {
-        String query = "INSERT INTO category_income (ID_user, category_sum, name_category, category_icon, bg_category) VALUES( "
-                + user.getID_user() + "," + 0 + ",\'" + name_1 + "\'," + icon_1 + ",\'" + bg_1 + "\')," + "( "
-                + user.getID_user() + "," + 0 + ",\'" + name_2 + "\'," + icon_2 + ",\'" + bg_2 + "\')," + "( "
-                + user.getID_user() + "," + 0 + ",\'" + name_3 + "\'," + icon_3 + ",\'" + bg_3 + "\')";
-        return query;
-    }
-
-    public static String setDefaultCategoryExpense(User user, String name_1, String name_2,
-                                                  int icon_1, int icon_2, String bg_1, String bg_2) {
-        String query = "INSERT INTO category_expense (ID_user, category_sum, name_category, category_icon, bg_category) VALUES( "
-                + user.getID_user() + "," + 0 + ",\'" + name_1 + "\'," + icon_1 + ",\'" + bg_1 + "\')," + "( "
-                + user.getID_user() + "," + 0 + ",\'" + name_2 + "\'," + icon_2 + ",\'" + bg_2 + "\')";
+        String query = "SELECT income_sum, name_income, income_icon, bg_expense " +
+                "FROM expense where ID_user = ?";
         return query;
     }
     /* -------------------------------------------------------------------------------------------*/
 
 
     /* ------------------------------------ FRAGMENT_INCOME --------------------------------------*/
-    public static String getIncomeForFragmentAdd() {
-        String query = "SELECT name_category, category_add_icon FROM category_income WHERE ID_user " +
-                "= ID_user = ?";
-        return query;
-    }
-
     public static String addNewIncomeCategory() {
-        String query = "INSERT INTO category_income (ID_user, category_sum, name_category, category_icon, " +
-                "bg_category, ID_accounts) VALUES (?,?,?,?,?,?)";
+        String query = "INSERT INTO income (ID_user, income_sum, name_income, income_icon, " +
+                "bg_income, ID_accounts) VALUES (?,?,?,?,?,?)";
         return query;
     }
     /* -------------------------------------------------------------------------------------------*/
 
     /* ---------------------------------- FRAGMENT_SUB_CATEGORY ----------------------------------*/
-    public static String getSubCategories() {
-        String query = "SELECT name_sub_category, sub_sum, date_last_entry, ID_sub_category FROM category_income, sub_category_income WHERE" +
-                " category_income.ID_category = sub_category_income.ID_category and sub_category_income.ID_category = ?";
-        return query;
-    }
-
     public static String updateSumOfCategory() {
-        String query = "UPDATE category_income SET category_sum = ? WHERE ID_category = ?";
+        String query = "UPDATE income SET income_sum = ? WHERE ID_income = ?";
         return query;
     }
 
     public static String removeItemFromSubCategory() {
-        String query = "DELETE FROM sub_category_income where name_sub_category = ? and id_category = ?";
+        String query = "DELETE FROM sub_category_income where name_sub_category = ? and ID_income = ?";
         return query;
     }
     /* -------------------------------------------------------------------------------------------*/
 
     /* ---------------------------------- DIALOG_ADD_SUB_CATEGORY --------------------------------*/
     public static String addSubCategory() {
-        String query = "INSERT INTO sub_category_income (ID_category, name_sub_category, sub_sum, date_last_entry) " +
-                "VALUES (?,?,?,?)";
+        String query = "INSERT INTO sub_category_income (ID_income, name_sub_category, sub_sum) " +
+                "VALUES (?,?,?)";
         return query;
     }
 
     public static String addHistoryItem() {
-        String query = "INSERT INTO history_income (date_last_entry, name_sub_category ,ID_user, name_category, sum)" +
-                " VALUES (?,?,?,?, ?)";
+        String query = "INSERT INTO history_income (date_entry, name_income, sum, ID_income)" +
+                " VALUES (?,?,?,?)";
         return query;
     }
 
     public static String getNewIdCategories(String names) {
-        String query = "SELECT ID_category FROM category_income WHERE ID_user = ? and name_category IN (" +
+        String query = "SELECT ID_income FROM income WHERE ID_user = ? and name_income IN (" +
                 names + ")";
         return query;
     }
 
     public static String updateSumSubCategory() {
-        String query = "UPDATE sub_category_income SET sub_sum = ? WHERE ID_category = ? and name_sub_category = ?";
+        String query = "UPDATE sub_category_income SET sub_sum = ? WHERE ID_income = ? and name_sub_category = ?";
         return query;
     }
 
     /* -------------------------------------------------------------------------------------------*/
 
     /* ----------------------------------- FRAGMENT_HISTORY --------------------------------------*/
-    public static String getNameOfCategories() {
-        String query = "SELECT name_category FROM category_income where ID_user = ?";
-        return query;
-    }
-
     public static String getSubCategoriesById(String part_of_query) {
-        String query = "SELECT name_sub_category, sub_sum, date_last_entry, category_income.ID_category " +
-                "FROM sub_category_income, category_income WHERE category_income.ID_category = sub_category_income.ID_category and " +
-                "sub_category_income.ID_category IN (" + part_of_query + ")";
+        String query = "SELECT name_sub_category, sub_sum, income.ID_income " +
+                "FROM sub_category_income, income WHERE income.ID_income = sub_category_income.ID_income and " +
+                "sub_category_income.ID_income IN (" + part_of_query + ")";
         return query;
     }
     /* -------------------------------------------------------------------------------------------*/

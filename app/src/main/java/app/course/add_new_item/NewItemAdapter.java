@@ -1,12 +1,14 @@
 package app.course.add_new_item;
 
 import android.graphics.drawable.Drawable;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -36,6 +38,18 @@ public class NewItemAdapter extends RecyclerView.Adapter<NewItemAdapter.MyViewHo
     public void onBindViewHolder(@NonNull MyViewHolder holder, int position) {
         holder.icon.setImageDrawable(icons.get(position));
         holder.name.setText(names.get(position));
+
+        holder.icon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Toast.makeText(view.getContext(), "Выбрано: " + holder.name.toString(), Toast.LENGTH_SHORT).show();
+                DialogAddNewItem dialogAddNewItem = DialogAddNewItem.getDialogAddNewItem();
+
+                Log.d("MyLog", holder.getAdapterPosition() + " pp");
+                dialogAddNewItem.setChoose_pos(holder.getAdapterPosition());
+                DialogAddNewItem.getDialogAddNewItem().setChoose_pos(holder.getAdapterPosition());
+            }
+        });
     }
 
     @Override

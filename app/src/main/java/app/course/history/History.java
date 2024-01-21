@@ -1,26 +1,48 @@
 package app.course.history;
 
-import android.graphics.drawable.Drawable;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-public class History {
-    private String name_sub_category;
+import androidx.annotation.NonNull;
+
+public class History implements Parcelable {
+    private String name_category;
     private String bg_color;
+
     private int icon;
     private int id_category;
+    private int sum;
 
-    public History(String name_sub_category, String bg_color, int icon, int id_category) {
-        this.name_sub_category = name_sub_category;
+    public History(String name_category, String bg_color, int icon, int id_category, int sum) {
+        this.name_category = name_category;
         this.bg_color = bg_color;
         this.icon = icon;
         this.id_category = id_category;
+        this.sum = sum;
     }
 
-    public String getName_sub_category() {
-        return name_sub_category;
+    protected History(Parcel in) {
+        name_category = in.readString();
+        bg_color = in.readString();
+        icon = in.readInt();
+        id_category = in.readInt();
+        sum = in.readInt();
     }
 
-    public void setName_sub_category(String name_sub_category) {
-        this.name_sub_category = name_sub_category;
+    public static final Creator<History> CREATOR = new Creator<History>() {
+        @Override
+        public History createFromParcel(Parcel in) {
+            return new History(in);
+        }
+
+        @Override
+        public History[] newArray(int size) {
+            return new History[size];
+        }
+    };
+
+    public String getName_category() {
+        return name_category;
     }
 
     public int getIcon() {
@@ -35,15 +57,23 @@ public class History {
         return bg_color;
     }
 
-    public void setBg_color(String bg_color) {
-        this.bg_color = bg_color;
-    }
-
     public int getId_category() {
         return id_category;
     }
 
-    public void setId_category(int id_category) {
-        this.id_category = id_category;
+    public int getSum() { return sum; }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(@NonNull Parcel parcel, int i) {
+        parcel.writeString(name_category);
+        parcel.writeString(bg_color);
+        parcel.writeInt(icon);
+        parcel.writeInt(id_category);
+        parcel.writeInt(sum);
     }
 }
